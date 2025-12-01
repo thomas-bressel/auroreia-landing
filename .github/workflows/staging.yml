@@ -1,4 +1,4 @@
-name: Deploy Drawer CIS - dashboard to VPS
+name: Deploy AuroreIA Landing Page - AuroreIA Landing to VPS
 
 on:
   push:
@@ -30,8 +30,8 @@ jobs:
         context: .
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/drawer-dashboard:latest
-          ${{ secrets.DOCKERHUB_USERNAME }}/drawer-dashboard:${{ github.sha }}
+          ${{ secrets.DOCKERHUB_USERNAME }}/auroreia-landing:latest
+          ${{ secrets.DOCKERHUB_USERNAME }}/auroreia-landing:${{ github.sha }}
       
     - name: Deploy to VPS
       uses: appleboy/ssh-action@v1.0.3
@@ -41,19 +41,19 @@ jobs:
         key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
         port: ${{ secrets.VPS_PORT }}
         script: |        
-          cd auroreia/drawer-cis/staging/dashboard
+          cd auroreia/landing/staging/
         
           # Arrêter seulement votre projet
-          docker compose -p drawer-dashboard down
+          docker compose -p auroreia-landing down
        
           # Récupérer la nouvelle image
-          docker compose -p drawer-dashboard pull
+          docker compose -p auroreia-landing pull
        
           # Relancer avec la nouvelle image
-          docker compose -p drawer-dashboard up -d
+          docker compose -p auroreia-landing up -d
        
           # Vérifier le statut
-          docker compose -p drawer-dashboard ps
+          docker compose -p auroreia-landing ps
           
           # Nettoyer les anciennes images
           docker image prune -f
