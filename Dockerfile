@@ -1,0 +1,29 @@
+# Dockerfile pour la production (Nuxt 3)
+# Stage 1: Build
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copier et installer les dépendances
+COPY package*.json ./
+RUN npm ci
+
+# Copier le code et build
+COPY . .
+RUN npm run build
+
+# Stage 2: Production
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copier l'application buildée
+COPY --from=builder /app/.output ./.output
+
+# Exposer le port
+EXPOSE 3000
+
+ENV NODE_ENV=production
+
+# Démarrer l'application
+CMD ["node", ".output/server/index.mjs"]

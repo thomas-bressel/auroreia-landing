@@ -1,0 +1,71 @@
+/* Non-critical styles loaded after first paint */
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  visibility: visible;
+}
+
+html.unlocked {
+  overflow-y: auto;
+}
+
+body.unlocked {
+  overflow: hidden;
+}
+
+.highlight {
+  background: linear-gradient(90deg, #00c2c7, #7a5fff, #ff7a59);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  /* Fallback pour les navigateurs qui ne supportent pas background-clip */
+  color: #00c2c7;
+}
+
+/* Focus visible pour l'accessibilité */
+*:focus-visible {
+  outline: 2px solid #00c2c7;
+  outline-offset: 4px;
+}
+
+/* Respect des préférences de mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Amélioration du contraste pour le mode à contraste élevé */
+@media (prefers-contrast: high) {
+  body {
+    background: #000000;
+    color: #ffffff;
+  }
+  
+  .highlight {
+    color: #00ffff;
+  }
+}
+
+/* Support du dark mode système */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #0a0a0a;
+    color: #fdfdfd;
+  }
+}
+
+/* Amélioration de la sélection de texte */
+::selection {
+  background-color: rgba(0, 194, 199, 0.3);
+  color: #ffffff;
+}
+
+::-moz-selection {
+  background-color: rgba(0, 194, 199, 0.3);
+  color: #ffffff;
+}

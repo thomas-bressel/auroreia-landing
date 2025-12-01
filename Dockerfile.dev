@@ -1,0 +1,20 @@
+# Dockerfile pour le développement (Nuxt 3)
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Copier les fichiers de dépendances
+COPY package*.json ./
+
+# Installer toutes les dépendances (dev + prod)
+RUN npm ci
+
+# Exposer le port
+EXPOSE 3000
+
+# Variables d'environnement pour le dev
+ENV NODE_ENV=development
+ENV HOST=0.0.0.0
+
+# Démarrer en mode dev avec hot-reload
+CMD ["npm", "run", "dev"]

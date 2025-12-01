@@ -1,0 +1,48 @@
+/* Critical CSS - Above the fold styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  overflow: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+/* Prevent white flash before Vue mounts */
+html {
+  background: #0a0a0a;
+}
+
+body {
+  color: #fdfdfd;
+  background: #0a0a0a;
+  position: relative;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+* {
+  scrollbar-width: none !important;
+}
+
+#app {
+  min-height: 100vh;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+#app.app-loaded {
+  opacity: 1;
+}
