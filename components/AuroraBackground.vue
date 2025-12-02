@@ -55,7 +55,6 @@ const handleMouseLeave = () => {
  */
 onMounted(() => {
   // Initialize Aurora immediately when component mounts
-  console.log('[Aurora] Component mounted', auroraCanvas.value)
 
   if (!auroraCanvas.value) {
     console.error('[Aurora] Canvas ref is null!')
@@ -65,10 +64,8 @@ onMounted(() => {
   // Add global mouse event listeners
   window.addEventListener('mousemove', handleMouseMove)
   window.addEventListener('mouseleave', handleMouseLeave)
-  console.log('[Aurora] Mouse listeners attached to window')
 
   requestAnimationFrame(() => {
-    console.log('[Aurora] Starting initialization...')
     initAurora()
   })
 })
@@ -78,7 +75,6 @@ onMounted(() => {
  */
 const initAurora = () => {
   if (!auroraCanvas.value) {
-    console.error('[Aurora] Canvas not available in initAurora')
     return
   }
 
@@ -86,14 +82,11 @@ const initAurora = () => {
   const ctx = canvas.getContext('2d', { alpha: true, desynchronized: true })
 
   if (!ctx) {
-    console.error('[Aurora] Failed to get 2d context')
     return
   }
 
   canvas.width = window.innerWidth
   canvas.height = window.innerHeight
-
-  console.log('[Aurora] Canvas initialized', canvas.width, 'x', canvas.height)
 
   let time = 0
 
@@ -205,7 +198,6 @@ const initAurora = () => {
     animationId = requestAnimationFrame(animate)
   }
 
-  console.log('[Aurora] Starting animation loop')
   animate()
 
   /**
@@ -214,7 +206,6 @@ const initAurora = () => {
   const handleResize = () => {
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
-    console.log('[Aurora] Resized to', canvas.width, 'x', canvas.height)
   }
 
   window.addEventListener('resize', handleResize)
@@ -229,7 +220,6 @@ onUnmounted(() => {
   }
   window.removeEventListener('mousemove', handleMouseMove)
   window.removeEventListener('mouseleave', handleMouseLeave)
-  console.log('[Aurora] Mouse listeners removed from window')
 })
 </script>
 

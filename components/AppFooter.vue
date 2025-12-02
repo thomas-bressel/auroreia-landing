@@ -2,9 +2,8 @@
   <footer class="footer" role="contentinfo">
     <p class="footer__copyright">© 2025 AuroreIA – L'intelligence artificielle au service des PME</p>
     <nav class="footer__nav" aria-label="Navigation du pied de page">
-      <a href="/mentions-legales" class="footer__link">Mentions légales</a>
-      <a href="/politique-confidentialite" class="footer__link">Politique de confidentialité</a>
-      <a href="/cgv" class="footer__link">CGV</a>
+      <NuxtLink to="/mentions-legales" class="footer__link">Mentions légales</NuxtLink>
+      <NuxtLink to="/politique-confidentialite" class="footer__link">Politique de confidentialité</NuxtLink>
     </nav>
   </footer>
 </template>

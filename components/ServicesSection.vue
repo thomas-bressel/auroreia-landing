@@ -1,8 +1,8 @@
 <template>
   <section id="services" class="services" tabindex="-1">
-    <h2 class="services__title">Nos Solutions IA pour PME</h2>
+    <h2 class="services__title">Avancement du projet</h2>
     <p class="services__intro">
-      Découvrez notre écosystème de solutions intelligentes conçues pour transformer votre présence digitale
+      Nos outils sont actuellement en phase de conception et développement. Vous pourrez bientôt découvrir :
     </p>
 
     <ul class="services__list" role="list">
@@ -26,21 +26,33 @@ const services = [
   {
     title: 'Drawer CIS',
     subtitle: 'Content Intelligent Software',
-    logo: 'logo_seul.webp',
+    logo: 'logo-drawer.webp',
     description: 'Centralisez et optimisez vos contenus web avec Drawer CIS. Notre IA comprend vos textes et vous propose des formulations améliorées, vous permettant de gagner du temps et d’augmenter l’impact de votre communication digitale.'
   },
   {
     title: 'AI-SEO & GEO',
     subtitle: 'Optimisation intelligente',
-    logo: 'AI-SEOGEO_logo.webp',
+    logo: 'logo-ai-seo-geo.webp',
     description: 'Optimisez votre visibilité locale et nationale avec l’IA. AI-SEO & GEO analyse automatiquement votre présence en ligne, fournit des recommandations personnalisées et vous envoie un rapport clair chaque mois — sans installation ni apprentissage d’outils complexes.'
   },
   {
     title: 'CyberSafe',
     subtitle: 'Sécurité automatisée',
-    logo: 'logo-CyberSafe.webp',
+    logo: 'logo-cybersafe.webp',
     description: 'Protégez votre infrastructure digitale grâce à l’IA. CyberSafe détecte automatiquement les vulnérabilités et risques exposés, puis vous envoie chaque mois un rapport clair et actionnable — la sécurité renforcée, sans complexité.'
-  }
+  },
+{
+  title: 'SpyWatch',
+  subtitle: 'Veille concurrentielle automatisée',
+  logo: 'logo-spywatch.webp',
+  description: 'Surveillez vos concurrents et analysez leur contenu grâce à l’IA. SpyWatch génère automatiquement des rapports détaillés et actionnables, vous permettant de rester compétitif sans perdre de temps.'
+},
+{
+  title: 'InclusIA',
+  subtitle: 'Audit d’accessibilité IA',
+  logo: 'logo-inclusIA.webp',
+  description: 'InclusIA analyse votre site et détecte automatiquement les problèmes d’accessibilité. Un rapport détaillé vous guide étape par étape pour rendre votre expérience digitale inclusive et conforme aux normes WCAG.'
+}
 ]
 </script>
 

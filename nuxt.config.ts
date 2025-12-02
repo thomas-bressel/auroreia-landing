@@ -1,9 +1,14 @@
+import { securityConfig } from './nuxt.config.security'
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
 
   ssr: true,
 
-  modules: ['@nuxt/image'],
+  modules: ['@nuxt/image', 'nuxt-security'],
+
+  // @ts-ignore - nuxt-security types
+  security: securityConfig,
 
   app: {
     head: {
@@ -68,7 +73,9 @@ export default defineNuxtConfig({
           type: 'image/webp'
         },
         { rel: 'canonical', href: 'https://auroreia.fr' },
-        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+        { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+        { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
+        { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
         { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }
       ],
       script: [
@@ -114,7 +121,7 @@ export default defineNuxtConfig({
   nitro: {
     prerender: {
       crawlLinks: true,
-      routes: ['/']
+      routes: ['/', '/mentions-legales', '/politique-confidentialite']
     },
     compressPublicAssets: {
       gzip: true,

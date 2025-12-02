@@ -3,13 +3,10 @@
     <div class="vision-section__content">
       <h2 class="vision-section__title">Notre Vision</h2>
       <p class="vision-section__text">
-        Les sites statiques et dynamiques appartiennent au passé. Avec l’écosystème d’AuroreIA,
-        <strong class="vision-section__highlight">vos sites deviennent vivants</strong>: ils écoutent, analysent, interagissent et s’adaptent à votre audience.
-Votre présence en ligne travaille pour vous, automatiquement, sans effort supplémentaire.
-      </p>
+        “Aurore” symbolise le <strong>début d’une nouvelle ère</strong>, la lumière qui ouvre de nouvelles perspectives.
+        Associé à <strong>IA</strong>, cela représente <strong>l’intelligence artificielle qui accompagne PME, créateurs et indépendants vers un web vivant et intelligent.</strong></p>
       <p class="vision-section__text">
-        Nous imaginons un futur où chaque entreprise est symbiotique : humain et IA collaborent pour créer
-une expérience client fluide, intelligente et connectée. Avec AuroreIA, votre site ne se contente plus d’exister, il <strong>évolue et optimise votre business en continu</strong>.
+       AuroreIA incarne une vision où vos outils digitaux <strong>évoluent avec vous, prennent des décisions intelligentes et optimisent votre présence en ligne</strong> — bientôt disponibles pour vous.
       </p>
     </div>
   </section>

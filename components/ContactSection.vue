@@ -1,28 +1,131 @@
 <template>
-  <section id="contact" class="contact">
-    <h2 class="contact__title">Prêt à franchir le pas ?</h2>
-    <p class="contact__intro">Discutons ensemble de la transformation de votre activité avec AuroreIA.</p>
+<section id="contact" class="contact">
+  <h2 class="contact__title">Restez en contact</h2>
 
-    <div class="contact__methods">
-      <a
-        href="mailto:contact@auroreia.fr"
-        class="contact__cta"
-        aria-label="Envoyer un email à contact@auroreia.fr"
+  <p class="contact__intro">
+    Rejoignez notre communauté et suivez <strong>la naissance d'AuroreIA</strong>.
+    Les premiers inscrits recevront une <strong>réduction exclusive</strong> lors du lancement officiel.
+  </p>
+
+  <div class="contact__methods">
+
+    <!-- Formulaire Newsletter -->
+    <form @submit.prevent="handleSubmit" class="newsletter-form" id="newsletter">
+      <div class="newsletter-form__group">
+        <label for="email-input" class="visually-hidden">Votre adresse email</label>
+        <input
+          id="email-input"
+          v-model="email"
+          type="email"
+          placeholder="votre@email.fr"
+          class="newsletter-form__input"
+          :disabled="isLoading"
+          required
+          aria-required="true"
+          aria-describedby="form-message"
+        />
+
+        <!-- Honeypot field - hidden from users but visible to bots -->
+        <input
+          v-model="honeypot"
+          type="text"
+          name="website"
+          class="honeypot-field"
+          tabindex="-1"
+          autocomplete="off"
+          aria-hidden="true"
+        />
+
+        <button
+          type="submit"
+          class="newsletter-form__button"
+          :disabled="isLoading"
+          aria-label="S'inscrire à la newsletter AuroreIA"
+        >
+          {{ isLoading ? '...' : '🔔 Rejoindre l\'accès anticipé' }}
+        </button>
+      </div>
+
+      <div
+        v-if="message"
+        :class="['form-message', messageType === 'success' ? 'form-message--success' : 'form-message--error']"
+        role="alert"
+        id="form-message"
       >
-        📧 Contactez-nous par email
-      </a>
+        {{ message }}
+      </div>
+    </form>
 
-      <p class="contact__info">
-        <strong class="contact__info-label">Email :</strong>
-        <a href="mailto:contact@auroreia.fr" class="contact__email-link">
-          contact@auroreia.fr
-        </a>
-      </p>
-    </div>
-  </section>
+    <p class="contact__info">
+      <strong class="contact__info-label">Email :</strong>
+      <a href="mailto:contact@auroreia.fr" class="contact__email-link">
+        contact@auroreia.fr
+      </a>
+    </p>
+  </div>
+</section>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+interface NewsletterResponse {
+  success: boolean
+  message?: string
+  error?: string
+}
+
+const email = ref('')
+const honeypot = ref('')
+const isLoading = ref(false)
+const message = ref('')
+const messageType = ref<'success' | 'error'>('success')
+
+const handleSubmit = async () => {
+  if (!email.value) return
+
+  // Protection honeypot : si le champ est rempli, c'est un bot
+  if (honeypot.value) {
+    console.warn('Bot detected via honeypot')
+    return
+  }
+
+  isLoading.value = true
+  message.value = ''
+
+  try {
+    // Utiliser useCsrfFetch pour inclure automatiquement le token CSRF
+    const { data, error } = await useCsrfFetch<NewsletterResponse>('/api/newsletter', {
+      method: 'POST',
+      body: {
+        email: email.value,
+        honeypot: honeypot.value
+      }
+    })
+
+    if (error.value) {
+      messageType.value = 'error'
+      message.value = 'Erreur de connexion. Veuillez réessayer.'
+      console.error('Newsletter error:', error.value)
+      return
+    }
+
+    const response = data.value
+    if (response?.success) {
+      messageType.value = 'success'
+      message.value = response.message || 'Inscription réussie !'
+      email.value = '' // Réinitialiser le formulaire
+    } else {
+      messageType.value = 'error'
+      message.value = response?.error || 'Une erreur est survenue'
+    }
+  } catch (error) {
+    messageType.value = 'error'
+    message.value = 'Erreur de connexion. Veuillez réessayer.'
+    console.error('Newsletter error:', error)
+  } finally {
+    isLoading.value = false
+  }
+}
+</script>
 
 <style scoped>
 /* Mobile First: Base styles for mobile */
@@ -193,9 +296,175 @@
   }
 }
 
+/* Newsletter Form Styles */
+.newsletter-form {
+  width: 100%;
+  max-width: 500px;
+}
+
+.newsletter-form__group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.newsletter-form__input {
+  padding: 0.875rem 1.25rem;
+  border: 2px solid #00c2c7;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  font-size: 1rem;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.newsletter-form__input::placeholder {
+  color: #a0a0a0;
+}
+
+.newsletter-form__input:focus {
+  outline: none;
+  border-color: #7a5fff;
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(122, 95, 255, 0.2);
+}
+
+.newsletter-form__input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.newsletter-form__button {
+  display: inline-block;
+  background: linear-gradient(90deg, #00c2c7, #7a5fff, #ff7a59);
+  color: #fff;
+  padding: 0.875rem 1.75rem;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 1rem;
+  box-shadow: 0 4px 16px rgba(122, 95, 255, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid transparent;
+  text-align: center;
+  cursor: pointer;
+  width: 100%;
+}
+
+.newsletter-form__button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 6px 24px rgba(122, 95, 255, 0.6);
+}
+
+.newsletter-form__button:focus {
+  outline: 3px solid #00c2c7;
+  outline-offset: 4px;
+  transform: scale(1.03);
+}
+
+.newsletter-form__button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.form-message {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  text-align: center;
+  animation: slideIn 0.3s ease-out;
+}
+
+.form-message--success {
+  background: rgba(0, 194, 199, 0.15);
+  color: #00c2c7;
+  border: 1px solid #00c2c7;
+}
+
+.form-message--error {
+  background: rgba(255, 122, 89, 0.15);
+  color: #ff7a59;
+  border: 1px solid #ff7a59;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Honeypot field - must be invisible but not use display:none */
+.honeypot-field {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Tablet responsive */
+@media (min-width: 480px) {
+  .newsletter-form__group {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+
+  .newsletter-form__input {
+    flex: 1;
+  }
+
+  .newsletter-form__button {
+    width: auto;
+    white-space: nowrap;
+  }
+}
+
+/* Desktop responsive */
+@media (min-width: 769px) {
+  .newsletter-form__input {
+    padding: 1rem 1.5rem;
+    font-size: 1.05rem;
+  }
+
+  .newsletter-form__button {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+  }
+
+  .form-message {
+    font-size: 1rem;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .contact__cta {
+  .contact__cta,
+  .newsletter-form__button {
     transition: none;
+  }
+
+  .form-message {
+    animation: none;
   }
 }
 </style>

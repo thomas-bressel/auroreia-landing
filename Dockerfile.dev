@@ -3,18 +3,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Copier les fichiers de dépendances
-COPY package*.json ./
-
-# Installer toutes les dépendances (dev + prod)
-RUN npm ci
-
 # Exposer le port
-EXPOSE 5000
+EXPOSE 3000
 
 # Variables d'environnement pour le dev
 ENV NODE_ENV=development
 ENV HOST=0.0.0.0
+ENV PORT=3000
 
-# Démarrer en mode dev avec hot-reload
-CMD ["npm", "run", "dev"]
+# Installer les dépendances au démarrage et lancer en mode dev
+# Les fichiers seront montés via le volume docker-compose
+CMD ["sh", "-c", "npm install && npm run dev"]
