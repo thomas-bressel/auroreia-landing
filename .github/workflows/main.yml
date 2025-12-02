@@ -29,6 +29,9 @@ jobs:
       with:
         context: .
         push: true
+        no-cache: true
+        build-args: |
+           APP_ENV=production
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/auroreia-landing:latest
           ${{ secrets.DOCKERHUB_USERNAME }}/auroreia-landing:prod
