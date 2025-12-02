@@ -3,15 +3,15 @@ import { securityConfig } from './nuxt.config.security'
 
 
 console.log('==========================================')
-console.log('🔧 NODE_ENV:', process.env.NODE_ENV)
+console.log('🔧 APP_ENV:', process.env.APP_ENV)
 console.log('🔧 All env vars:', Object.keys(process.env).filter(k => k.includes('NODE')))
 console.log('==========================================')
 
 
 
 // Détection automatique de l'environnement
-const isStaging = process.env.NODE_ENV === 'staging'
-const isProduction = process.env.NODE_ENV === 'production'
+const isStaging = process.env.APP_ENV === 'staging'
+const isProduction = process.env.APP_ENV === 'production'
 
 // URL de base selon l'environnement
 const baseURL = isStaging  ? 'https://staging.auroreia.fr' : isProduction ? 'https://auroreia.fr' : 'http://localhost:3000'
