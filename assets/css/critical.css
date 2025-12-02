@@ -63,3 +63,9 @@ body::-webkit-scrollbar,
 .js-ready #app.app-loaded {
   opacity: 1;
 }
+
+/* Ensure legal pages have dark background immediately on SSR */
+.legal-page {
+  background: #0a0a0a;
+  color: #e0e0e0;
+}
