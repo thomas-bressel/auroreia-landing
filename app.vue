@@ -51,7 +51,7 @@ onMounted(() => {
 .main-content {
   display: flex;
   flex-direction: column;
-  gap: 10rem;
+  gap: 20rem;
 }
 .content-wrapper {
   position: relative;
