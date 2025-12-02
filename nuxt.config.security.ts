@@ -19,9 +19,9 @@ export const securityConfig = {
     xXSSProtection: '1; mode=block',
     referrerPolicy: 'strict-origin-when-cross-origin',
     permissionsPolicy: {
-      camera: ['()'],
-      microphone: ['()'],
-      geolocation: ['()']
+      camera: [],
+      microphone: [],
+      geolocation: []
     }
   },
   rateLimiter: {

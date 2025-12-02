@@ -5,8 +5,8 @@
     <main class="main-content" id="main-content">
       <HeroSection ref="heroSection" />
       <ServicesSection />
-      <VisionSection />
       <ContactSection />
+      <VisionSection />
     </main>
     <AppFooter />
   </div>
