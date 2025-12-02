@@ -31,7 +31,7 @@ jobs:
         push: true
         no-cache: true
         build-args: |
-          NODE_ENV=staging
+           APP_ENV=staging
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/auroreia-landing:staging
           ${{ secrets.DOCKERHUB_USERNAME }}/auroreia-landing:staging-${{ github.sha }}

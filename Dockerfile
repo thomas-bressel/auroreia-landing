@@ -3,45 +3,41 @@
 # ============================================
 FROM node:20-alpine AS builder
 
-# Argument pour définir l'environnement de build
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
+# Utiliser APP_ENV au lieu de NODE_ENV (défaut = staging pour cette branche)
+ARG APP_ENV=staging
+ENV APP_ENV=${APP_ENV}
+# NODE_ENV reste à production pour npm (c'est juste pour le build npm)
+ENV NODE_ENV=production
+
+RUN echo "🔧 Building with APP_ENV=${APP_ENV}"
 
 WORKDIR /app
 
-# Copier et installer les dépendances
 COPY package*.json ./
 RUN npm ci
 
-# Copier le code source
 COPY . .
 
-# ⚠️ CRITIQUE : Forcer NODE_ENV pendant le build
-RUN NODE_ENV=${NODE_ENV} npm run build
+RUN npm run build
 
 # ============================================
-# Stage 2: Production Runtime
+# Stage 2: Runtime
 # ============================================
 FROM node:20-alpine
 
-# Re-déclarer ARG pour le Stage 2
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
+ARG APP_ENV=staging
+ENV APP_ENV=${APP_ENV}
+ENV NODE_ENV=production
 ENV PORT=5000
 
 WORKDIR /app
 
-# Copier l'application buildée
 COPY --from=builder /app/.output ./.output
 
-# Créer le répertoire pour la base de données SQLite
 RUN mkdir -p /app/data && chown -R node:node /app/data
 
-# Exposer le port
 EXPOSE 5000
 
-# Utiliser l'utilisateur non-root
 USER node
 
-# Démarrer l'application
 CMD ["node", ".output/server/index.mjs"]
