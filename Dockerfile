@@ -4,7 +4,7 @@
 FROM node:20-alpine AS builder
 
 # Utiliser APP_ENV au lieu de NODE_ENV (défaut = staging pour cette branche)
-ARG APP_ENV=staging
+ARG APP_ENV=production
 ENV APP_ENV=${APP_ENV}
 # NODE_ENV reste à production pour npm (c'est juste pour le build npm)
 ENV NODE_ENV=production
@@ -25,7 +25,7 @@ RUN npm run build
 # ============================================
 FROM node:20-alpine
 
-ARG APP_ENV=staging
+ARG APP_ENV=production
 ENV APP_ENV=${APP_ENV}
 ENV NODE_ENV=production
 ENV PORT=5000
