@@ -1,18 +1,25 @@
 import { securityConfig } from './nuxt.config.security'
 
+// Détection automatique de l'environnement
+const isStaging = process.env.NODE_ENV === 'staging'
+const isProduction = process.env.NODE_ENV === 'production'
+
+// URL de base selon l'environnement
+const baseURL = isStaging 
+  ? 'https://staging.auroreia.fr' 
+  : isProduction 
+    ? 'https://auroreia.fr'
+    : 'http://localhost:3000'
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
-
   ssr: true,
-
   modules: ['@nuxt/image', 'nuxt-security'],
-
   // @ts-ignore - nuxt-security types
   security: securityConfig,
-
   app: {
     head: {
-      title: 'AuroreIA — L’écosystème web vivant',
+      title: isStaging ? 'AuroreIA — Staging (L\'écosystème web vivant)' : 'AuroreIA — L\'écosystème web vivant',
       htmlAttrs: {
         lang: 'fr'
       },
@@ -28,28 +35,39 @@ export default defineNuxtConfig({
           content: 'écosystème web intelligent, site vivant, intelligence artificielle PME, audit SEO IA, audit cybersécurité automatisé, audit accessibilité, réputation locale IA, LivingSite, Drawer CMS, optimisation funnels IA'
         },
         { name: 'author', content: 'AuroreIA' },
-        { name: 'robots', content: 'index, follow' },
+        // Ne pas indexer le staging
+        { name: 'robots', content: isStaging ? 'noindex, nofollow' : 'index, follow' },
 
         // Open Graph / Facebook
         { property: 'og:type', content: 'website' },
-        { property: 'og:url', content: 'https://auroreia.fr' },
-        { property: 'og:title', content: 'AuroreIA – Intelligence Artificielle au service des PME' },
+        { property: 'og:url', content: baseURL },
+        { 
+          property: 'og:title', 
+          content: isStaging 
+            ? 'AuroreIA – Staging – Intelligence Artificielle au service des PME' 
+            : 'AuroreIA – Intelligence Artificielle au service des PME' 
+        },
         {
           property: 'og:description',
           content: 'Transformez votre entreprise avec nos solutions IA : sites vivants, audit automatisé, cybersécurité et optimisation de votre présence en ligne.'
         },
-        { property: 'og:image', content: 'https://auroreia.fr/og-image.jpg' },
+        { property: 'og:image', content: `${baseURL}/og-image.jpg` },
         { property: 'og:locale', content: 'fr_FR' },
 
         // Twitter
         { name: 'twitter:card', content: 'summary_large_image' },
-        { name: 'twitter:url', content: 'https://auroreia.fr' },
-        { name: 'twitter:title', content: 'AuroreIA – Intelligence Artificielle pour PME' },
+        { name: 'twitter:url', content: baseURL },
+        { 
+          name: 'twitter:title', 
+          content: isStaging 
+            ? 'AuroreIA – Staging – Intelligence Artificielle pour PME' 
+            : 'AuroreIA – Intelligence Artificielle pour PME' 
+        },
         {
           name: 'twitter:description',
           content: 'Transformez votre entreprise avec nos solutions IA : sites vivants, audit automatisé, cybersécurité.'
         },
-        { name: 'twitter:image', content: 'https://auroreia.fr/og-image.jpg' },
+        { name: 'twitter:image', content: `${baseURL}/og-image.jpg` },
 
         // Additional SEO
         { name: 'theme-color', content: '#00c2c7' },
@@ -65,14 +83,13 @@ export default defineNuxtConfig({
           href: 'https://fonts.gstatic.com',
           crossorigin: 'anonymous'
         },
-        // Preload critical assets for faster LCP
         {
           rel: 'preload',
           href: '/logo-auroreIA.webp',
           as: 'image',
           type: 'image/webp'
         },
-        { rel: 'canonical', href: 'https://auroreia.fr' },
+        { rel: 'canonical', href: baseURL },
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
         { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon-32x32.png' },
         { rel: 'icon', type: 'image/png', sizes: '16x16', href: '/favicon-16x16.png' },
@@ -85,8 +102,8 @@ export default defineNuxtConfig({
             "@context": "https://schema.org",
             "@type": "Organization",
             "name": "AuroreIA",
-            "url": "https://auroreia.fr",
-            "logo": "https://auroreia.fr/logo-auroreIA.webp",
+            "url": baseURL,
+            "logo": `${baseURL}/logo-auroreIA.webp`,
             "description": "Solutions d'intelligence artificielle pour PME",
             "address": {
               "@type": "PostalAddress",
@@ -117,7 +134,6 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-01-21',
 
-  // SEO and Performance optimizations
   nitro: {
     prerender: {
       crawlLinks: true,
@@ -129,7 +145,6 @@ export default defineNuxtConfig({
     }
   },
 
-  // Enable compression and optimize build
   vite: {
     build: {
       cssMinify: true,
@@ -144,7 +159,6 @@ export default defineNuxtConfig({
     }
   },
 
-  // Image optimization
   image: {
     format: ['webp', 'avif'],
     quality: 80,
@@ -159,9 +173,7 @@ export default defineNuxtConfig({
     provider: 'ipx'
   },
 
-  // Enable HTTP/2 push and caching
   routeRules: {
-    // Static assets - no cookies, long cache
     '/_nuxt/**': {
       headers: {
         'Cache-Control': 'public, max-age=31536000, immutable',
@@ -174,7 +186,6 @@ export default defineNuxtConfig({
         'X-Content-Type-Options': 'nosniff'
       }
     },
-    // HTML pages - shorter cache
     '/': {
       headers: {
         'Cache-Control': 'public, max-age=3600, must-revalidate',
@@ -185,7 +196,6 @@ export default defineNuxtConfig({
     }
   },
 
-  // Experimental features for better performance
   experimental: {
     payloadExtraction: true,
     renderJsonPayloads: true

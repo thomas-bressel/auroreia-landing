@@ -29,6 +29,8 @@ jobs:
       with:
         context: .
         push: true
+        build-args: |
+          NODE_ENV=staging
         tags: |
           ${{ secrets.DOCKERHUB_USERNAME }}/auroreia-landing:staging
           ${{ secrets.DOCKERHUB_USERNAME }}/auroreia-landing:staging-${{ github.sha }}
@@ -55,6 +57,9 @@ jobs:
 
           # Vérifier le statut
           docker compose -p auroreia-landing-staging ps
+
+          # Afficher les logs pour vérifier le démarrage
+          docker compose -p auroreia-landing-staging logs --tail 20
 
           # Nettoyer les anciennes images non utilisées
           docker image prune -f
