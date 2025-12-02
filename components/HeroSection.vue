@@ -36,6 +36,9 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 
+// Detect if device is mobile
+const isMobile = ref(false)
+
 const currentIndex = ref(0)
 const isLocked = ref(true)
 const scrollProgress = ref(0)
@@ -61,21 +64,26 @@ const emit = defineEmits<{
 const unlockScroll = () => {
   if (isLocked.value) {
     if (typeof document !== 'undefined') {
-      document.documentElement.classList.add('unlocked')
-      document.body.classList.add('unlocked')
-      document.documentElement.style.overflowY = 'scroll'
-      document.body.style.overflow = 'visible'
+      // Only modify styles on desktop
+      if (!isMobile.value) {
+        document.documentElement.classList.add('unlocked')
+        document.body.classList.add('unlocked')
+        document.documentElement.style.overflowY = 'scroll'
+        document.body.style.overflow = 'visible'
+      }
     }
     isLocked.value = false
     emit('unlocked')
 
-    // Set focus on main content after unlocking
-    setTimeout(() => {
-      const mainContent = document.querySelector('#services')
-      if (mainContent && mainContent instanceof HTMLElement) {
-        mainContent.focus()
-      }
-    }, 100)
+    // Set focus on main content after unlocking (desktop only)
+    if (!isMobile.value) {
+      setTimeout(() => {
+        const mainContent = document.querySelector('#services')
+        if (mainContent && mainContent instanceof HTMLElement) {
+          mainContent.focus()
+        }
+      }, 100)
+    }
   }
 }
 
@@ -89,7 +97,8 @@ defineExpose({
  * @param e - The wheel event
  */
 const handleWheel = (e: WheelEvent) => {
-  if (isLocked.value) {
+  // Only handle wheel events on desktop
+  if (isLocked.value && !isMobile.value) {
     scrollProgress.value += e.deltaY
 
     const currentThreshold = currentIndex.value === 1 ? scrollThresholdLast : scrollThreshold
@@ -166,9 +175,21 @@ const handleScroll = () => {
 
 onMounted(() => {
   if (typeof window !== 'undefined') {
-    window.addEventListener('wheel', handleWheel, { passive: false })
-    window.addEventListener('keydown', handleKeyDown)
-    window.addEventListener('scroll', handleScroll)
+    // Detect if device is mobile
+    isMobile.value = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768
+
+    // If mobile, show last text and unlock scroll immediately
+    if (isMobile.value) {
+      currentIndex.value = texts.length - 1 // Show 3rd text
+      isLocked.value = false // Unlock without modifying styles (CSS handles it)
+    } else {
+      // Desktop: add wheel event listener for text navigation
+      window.addEventListener('wheel', handleWheel, { passive: false })
+      window.addEventListener('keydown', handleKeyDown)
+      window.addEventListener('scroll', handleScroll)
+    }
+
+    // Force scroll to top
     window.scrollTo(0, 0)
   }
 })
