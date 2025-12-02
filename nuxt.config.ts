@@ -5,11 +5,7 @@ const isStaging = process.env.NODE_ENV === 'staging'
 const isProduction = process.env.NODE_ENV === 'production'
 
 // URL de base selon l'environnement
-const baseURL = isStaging 
-  ? 'https://staging.auroreia.fr' 
-  : isProduction 
-    ? 'https://auroreia.fr'
-    : 'http://localhost:3000'
+const baseURL = isStaging  ? 'https://staging.auroreia.fr' : isProduction ? 'https://auroreia.fr' : 'http://localhost:3000'
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
