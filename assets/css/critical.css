@@ -8,10 +8,13 @@
 html,
 body {
   height: 100%;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   -ms-overflow-style: none;
   scrollbar-width: none;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  /* Fix for iOS Safari scroll */
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Prevent white flash before Vue mounts */
