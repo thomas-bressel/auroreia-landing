@@ -1,16 +1,10 @@
-# Dockerfile pour staging et production (Nuxt 3)
-# Usage:
-#   docker build --build-arg NODE_ENV=staging -t auroreia-landing:staging .
-#   docker build --build-arg NODE_ENV=production -t auroreia-landing:prod .
-
 # ============================================
 # Stage 1: Build
 # ============================================
 FROM node:20-alpine AS builder
 
 # Argument pour définir l'environnement de build
-ARG NODE_ENV=staging
-# ARG NODE_ENV=production
+ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /app
@@ -22,17 +16,16 @@ RUN npm ci
 # Copier le code source
 COPY . .
 
-# Build de l'application (utilise NODE_ENV pour la config)
-RUN npm run build
+# ⚠️ CRITIQUE : Forcer NODE_ENV pendant le build
+RUN NODE_ENV=${NODE_ENV} npm run build
 
 # ============================================
 # Stage 2: Production Runtime
 # ============================================
 FROM node:20-alpine
 
-# Récupérer l'environnement depuis le build stage
-ARG NODE_ENV=staging
-# ARG NODE_ENV=production
+# Re-déclarer ARG pour le Stage 2
+ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 ENV PORT=5000
 
