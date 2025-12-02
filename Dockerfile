@@ -21,9 +21,10 @@ WORKDIR /app
 COPY --from=builder /app/.output ./.output
 
 # Exposer le port
-EXPOSE 3000
+EXPOSE 5000
 
 ENV NODE_ENV=production
+ENV PORT=5000
 
 # Démarrer l'application
 CMD ["node", ".output/server/index.mjs"]

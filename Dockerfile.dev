@@ -10,7 +10,7 @@ COPY package*.json ./
 RUN npm ci
 
 # Exposer le port
-EXPOSE 3000
+EXPOSE 5000
 
 # Variables d'environnement pour le dev
 ENV NODE_ENV=development
