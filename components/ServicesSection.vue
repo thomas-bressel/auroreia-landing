@@ -27,19 +27,19 @@ const services = [
     title: 'Drawer CIS',
     subtitle: 'Content Intelligent Software',
     logo: 'logo_seul.webp',
-    description: 'Gestion de contenu, Drawer CIS centralise vos projets web et optimise vos contenus digitaux. Grâce à l\'intelligence artificielle, vous pourrez gagner du temps sur vos formulations de texte. Notre IA comprend vos textes et vous suggère du contenu.'
+    description: 'Centralisez et optimisez vos contenus web avec Drawer CIS. Notre IA comprend vos textes et vous propose des formulations améliorées, vous permettant de gagner du temps et d’augmenter l’impact de votre communication digitale.'
   },
   {
     title: 'AI-SEO & GEO',
     subtitle: 'Optimisation intelligente',
     logo: 'AI-SEOGEO_logo.webp',
-    description: 'Audit IA automatique de votre présence en ligne. Analysez et optimisez votre référencement naturel et local avec des recommandations personnalisées. Recevez un rapport détaillé chaque mois directement dans votre boîte mail : pas d\'outils à apprendre = temps pour entreprendre !'
+    description: 'Optimisez votre visibilité locale et nationale avec l’IA. AI-SEO & GEO analyse automatiquement votre présence en ligne, fournit des recommandations personnalisées et vous envoie un rapport clair chaque mois — sans installation ni apprentissage d’outils complexes.'
   },
   {
     title: 'CyberSafe',
     subtitle: 'Sécurité automatisée',
     logo: 'logo-CyberSafe.webp',
-    description: 'Audit de sécurité automatisé par IA pour identifier les vulnérabilités et informations visibles de votre infrastructure digitale et protéger vos données. Recevez un rapport détaillé chaque mois directement dans votre boîte mail : pas d\'outils à apprendre = temps pour entreprendre !'
+    description: 'Protégez votre infrastructure digitale grâce à l’IA. CyberSafe détecte automatiquement les vulnérabilités et risques exposés, puis vous envoie chaque mois un rapport clair et actionnable — la sécurité renforcée, sans complexité.'
   }
 ]
 </script>

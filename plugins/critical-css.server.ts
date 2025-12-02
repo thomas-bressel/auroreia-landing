@@ -1,12 +1,15 @@
-/* Critical CSS - Above the fold styles */
-* {
+export default defineNuxtPlugin(() => {
+  // Inject critical CSS inline in head for SSR to prevent FOUC
+  useHead({
+    style: [
+      {
+        innerHTML: `* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-html,
-body {
+html, body {
   height: 100%;
   overflow: hidden;
   -ms-overflow-style: none;
@@ -14,7 +17,6 @@ body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }
 
-/* Prevent white flash before Vue mounts */
 html {
   background: #0a0a0a;
 }
@@ -37,13 +39,11 @@ body::-webkit-scrollbar,
   scrollbar-width: none !important;
 }
 
-/* Default state for SSR - visible to prevent white flash */
 #app {
   min-height: 100vh;
   opacity: 1;
 }
 
-/* Fade-in effect only when JavaScript is ready */
 .js-ready #app {
   opacity: 0;
   transition: opacity 1s ease-in-out;
@@ -51,4 +51,9 @@ body::-webkit-scrollbar,
 
 .js-ready #app.app-loaded {
   opacity: 1;
-}
+}`,
+        tagPriority: 'critical'
+      }
+    ]
+  })
+})

@@ -4,7 +4,7 @@
     <div class="content-wrapper">
       <a href="#main-content" class="skip-link">Skip to main content</a>
       <AppHeader @nav-click="handleNavClick" />
-      <main id="main-content">
+      <main class="main-content" id="main-content">
         <HeroSection ref="heroSection" />
         <ServicesSection />
         <VisionSection />
@@ -34,6 +34,9 @@ const handleNavClick = () => {
  * Triggers the app fade-in animation after mounting
  */
 onMounted(() => {
+  // Add js-ready class to enable fade-in transition
+  document.documentElement.classList.add('js-ready')
+
   // Trigger app fade-in after a short delay
   requestAnimationFrame(() => {
     setTimeout(() => {
@@ -44,6 +47,12 @@ onMounted(() => {
 </script>
 
 <style>
+
+.main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10rem;
+}
 .content-wrapper {
   position: relative;
   z-index: 1;

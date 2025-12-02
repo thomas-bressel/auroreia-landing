@@ -7,7 +7,7 @@ export default defineNuxtConfig({
 
   app: {
     head: {
-      title: 'AuroreIA – Intelligence Artificielle pour PME | Transformation Digitale',
+      title: 'AuroreIA — L’écosystème web vivant',
       htmlAttrs: {
         lang: 'fr'
       },
@@ -16,11 +16,11 @@ export default defineNuxtConfig({
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
         {
           name: 'description',
-          content: 'AuroreIA accompagne les PME dans leur transformation digitale avec des solutions IA innovantes : sites intelligents, audit SEO automatisé, cybersécurité et réputation en ligne.'
+          content: 'AuroreIA propose un écosystème web vivant pour PME : sites intelligents, audits SEO, cybersécurité, accessibilité, réputation locale et optimisation continue par IA. Vos outils travaillent pour vous – automatiquement.'
         },
         {
           name: 'keywords',
-          content: 'intelligence artificielle, IA pour PME, transformation digitale, audit SEO, cybersécurité, site intelligent, GEO, réputation en ligne, Drawer CIS, LocalPulse'
+          content: 'écosystème web intelligent, site vivant, intelligence artificielle PME, audit SEO IA, audit cybersécurité automatisé, audit accessibilité, réputation locale IA, LivingSite, Drawer CMS, optimisation funnels IA'
         },
         { name: 'author', content: 'AuroreIA' },
         { name: 'robots', content: 'index, follow' },

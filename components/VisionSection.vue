@@ -3,14 +3,13 @@
     <div class="vision-section__content">
       <h2 class="vision-section__title">Notre Vision</h2>
       <p class="vision-section__text">
-        Il y a eu les sites statiques et dynamiques. Aujourd'hui, avec l'écosystème d'AuroreIA,
-        <strong class="vision-section__highlight">vos sites deviennent vivants</strong> : ils écoutent, analysent, agissent et interagissent.
-        Ils augmentent vos capacités, sans effort supplémentaire.
+        Les sites statiques et dynamiques appartiennent au passé. Avec l’écosystème d’AuroreIA,
+        <strong class="vision-section__highlight">vos sites deviennent vivants</strong>: ils écoutent, analysent, interagissent et s’adaptent à votre audience.
+Votre présence en ligne travaille pour vous, automatiquement, sans effort supplémentaire.
       </p>
       <p class="vision-section__text">
-        Nous vous proposons la vision d'un futur où votre présence en ligne est vivante,
-        intelligente et connectée. Une entreprise symbiotique où l'humain et l'IA collaborent
-        pour créer une expérience client exceptionnelle.
+        Nous imaginons un futur où chaque entreprise est symbiotique : humain et IA collaborent pour créer
+une expérience client fluide, intelligente et connectée. Avec AuroreIA, votre site ne se contente plus d’exister, il <strong>évolue et optimise votre business en continu</strong>.
       </p>
     </div>
   </section>

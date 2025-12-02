@@ -11,13 +11,13 @@
       :data-index="idx"
     >
       <span v-if="idx === 0">
-        Ce n'est pas un site, c'est <span class="hero__highlight">une entité numérique</span>
+        Ce n'est pas un site web, c'est <span class="hero__highlight">une entité numérique vivante</span>
       </span>
       <span v-else-if="idx === 1">
-        Ce n'est pas une vitrine, mais <span class="hero__highlight">votre double numérique</span>
+        Ce n'est pas un audit, c’est  <span class="hero__highlight">le double numérique de votre entreprise</span>
       </span>
       <span v-else>
-        <span class="hero__highlight">Bienvenue dans l'ère des entreprises symbiotiques.</span>
+        <span class="hero__highlight">C’est une intelligence dédiée qui travaille pour votre entreprise.</span>
       </span>
     </div>
 
@@ -41,9 +41,9 @@ const isLocked = ref(true)
 const scrollProgress = ref(0)
 
 // Reduced thresholds for faster unlock and better LCP
-const scrollThreshold = 1000
-const scrollThresholdLast = 2000
-const unlockThreshold = 2100
+const scrollThreshold = 500
+const scrollThresholdLast = 1000
+const unlockThreshold = 1500
 
 const texts = [
   'text1',
