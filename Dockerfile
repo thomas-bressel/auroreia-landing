@@ -9,7 +9,8 @@
 FROM node:20-alpine AS builder
 
 # Argument pour définir l'environnement de build
-ARG NODE_ENV=production
+ARG NODE_ENV=staging
+# ARG NODE_ENV=production
 ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /app
