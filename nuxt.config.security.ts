@@ -37,11 +37,8 @@ export const securityConfig = {
     methods: ['GET', 'POST'],
     credentials: true
   },
-  csrf: {
-    enabled: true,
-    methodsToProtect: ['POST', 'PUT', 'PATCH', 'DELETE']
-  },
+  csrf: false,
   allowedMethodsRestricter: {
-    methods: ['GET', 'POST']
+    methods: ['GET', 'POST', 'DELETE']
   }
 }

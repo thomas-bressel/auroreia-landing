@@ -1,14 +1,16 @@
 <template>
   <header class="header" role="banner">
     <div class="header__brand">
-      <img
-        src="/logo-auroreIA.webp"
-        alt="Logo AuroreIA - Intelligence Artificielle pour PME"
-        class="header__logo"
-        width="200"
-        height="36"
-        loading="eager"
-      />
+      <NuxtLink to="/">
+        <img
+          src="/logo-auroreIA.webp"
+          alt="Logo AuroreIA - Intelligence Artificielle pour PME"
+          class="header__logo"
+          width="200"
+          height="36"
+          loading="eager"
+        />
+      </NuxtLink>
     </div>
 
     <!-- Burger button (mobile only) -->
@@ -64,43 +66,115 @@
       >
         Contact
       </a>
+
+      <!-- Séparateur mobile -->
+      <div class="header__separator"></div>
+
+      <!-- Menu utilisateur -->
+      <div class="header__user">
+        <!-- Non connecté -->
+        <template v-if="!isAuthenticated">
+          <NuxtLink to="/login" class="header__btn header__btn--login" @click="closeMenu">
+            Connexion
+          </NuxtLink>
+        </template>
+
+        <!-- Connecté -->
+        <template v-else>
+          <div class="header__user-menu" :class="{ 'is-open': isUserMenuOpen }">
+            <button
+              class="header__user-trigger"
+              @click="toggleUserMenu"
+              :aria-expanded="isUserMenuOpen"
+            >
+              <span class="header__user-avatar">
+                {{ userInitial }}
+              </span>
+              <span class="header__user-name">{{ displayName }}</span>
+              <svg class="header__user-chevron" width="12" height="12" viewBox="0 0 12 12" fill="currentColor">
+                <path d="M2.5 4.5L6 8L9.5 4.5" stroke="currentColor" stroke-width="1.5" fill="none"/>
+              </svg>
+            </button>
+
+            <div class="header__user-dropdown" v-show="isUserMenuOpen">
+              <NuxtLink to="/dashboard" class="header__user-item" @click="closeAllMenus">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="7" height="7"/>
+                  <rect x="14" y="3" width="7" height="7"/>
+                  <rect x="14" y="14" width="7" height="7"/>
+                  <rect x="3" y="14" width="7" height="7"/>
+                </svg>
+                Mes projets
+              </NuxtLink>
+              <button class="header__user-item header__user-item--logout" @click="handleLogout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
+                </svg>
+                Déconnexion
+              </button>
+            </div>
+          </div>
+        </template>
+      </div>
     </nav>
   </header>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 
 const emit = defineEmits<{
   navClick: []
 }>()
 
-const isMenuOpen = ref(false)
+const { owner, isAuthenticated, logout, checkAuth } = useAuth()
 
-/**
- * Toggles the mobile menu open/closed
- */
+const isMenuOpen = ref(false)
+const isUserMenuOpen = ref(false)
+
+const userInitial = computed(() => {
+  if (owner.value?.displayName) {
+    return owner.value.displayName.charAt(0).toUpperCase()
+  }
+  if (owner.value?.email) {
+    return owner.value.email.charAt(0).toUpperCase()
+  }
+  return '?'
+})
+
+const displayName = computed(() => {
+  return owner.value?.displayName || owner.value?.email?.split('@')[0] || ''
+})
+
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
 }
 
-/**
- * Closes the mobile menu
- */
 const closeMenu = () => {
   isMenuOpen.value = false
 }
 
-/**
- * Handles navigation link clicks - emits event and scrolls to section after unlock
- * @param event - The click event from the navigation link
- */
+const toggleUserMenu = () => {
+  isUserMenuOpen.value = !isUserMenuOpen.value
+}
+
+const closeAllMenus = () => {
+  isMenuOpen.value = false
+  isUserMenuOpen.value = false
+}
+
+const handleLogout = async () => {
+  closeAllMenus()
+  await logout()
+}
+
 const handleNavClick = (event: Event) => {
   event.preventDefault()
-  closeMenu() // Close mobile menu when link is clicked
+  closeMenu()
   emit('navClick')
 
-  // Scroll to the section after unlocking
   const target = (event.target as HTMLAnchorElement).getAttribute('href')
   if (target) {
     setTimeout(() => {
@@ -111,6 +185,22 @@ const handleNavClick = (event: Event) => {
     }, 600)
   }
 }
+
+const handleClickOutside = (event: MouseEvent) => {
+  const target = event.target as HTMLElement
+  if (!target.closest('.header__user-menu')) {
+    isUserMenuOpen.value = false
+  }
+}
+
+onMounted(() => {
+  checkAuth()
+  document.addEventListener('click', handleClickOutside)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleClickOutside)
+})
 </script>
 
 <style scoped>
@@ -256,6 +346,147 @@ const handleNavClick = (event: Event) => {
   outline-style: solid;
 }
 
+/* Separator (mobile only) */
+.header__separator {
+  width: 80%;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 1rem 0;
+}
+
+/* User section */
+.header__user {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.header__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  border: none;
+}
+
+.header__btn--login {
+  background: linear-gradient(135deg, #00c2c7 0%, #0098a3 100%);
+  color: #ffffff;
+}
+
+.header__btn--login:hover {
+  background: linear-gradient(135deg, #00d4da 0%, #00aab5 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 194, 199, 0.3);
+}
+
+/* User menu */
+.header__user-menu {
+  position: relative;
+  width: 100%;
+}
+
+.header__user-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.header__user-trigger:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.header__user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #00c2c7 0%, #0098a3 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: #ffffff;
+}
+
+.header__user-name {
+  font-size: 0.875rem;
+  font-weight: 500;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.header__user-chevron {
+  transition: transform 0.2s ease;
+}
+
+.header__user-menu.is-open .header__user-chevron {
+  transform: rotate(180deg);
+}
+
+.header__user-dropdown {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 180px;
+  background: rgba(20, 20, 20, 0.98);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  padding: 0.5rem;
+  z-index: 110;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
+
+.header__user-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.875rem;
+  border-radius: 6px;
+  transition: background 0.2s ease;
+  width: 100%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.header__user-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.header__user-item--logout {
+  color: #ff6b6b;
+}
+
+.header__user-item--logout:hover {
+  background: rgba(255, 107, 107, 0.1);
+}
+
 /* Tablet: Horizontal navigation, hide burger */
 @media (min-width: 480px) {
   .header {
@@ -299,6 +530,29 @@ const handleNavClick = (event: Event) => {
 
   .header__link:hover,
   .header__link:focus {
+    transform: none;
+  }
+
+  .header__separator {
+    display: none;
+  }
+
+  .header__user {
+    width: auto;
+    margin-left: 1rem;
+  }
+
+  .header__user-menu {
+    width: auto;
+  }
+
+  .header__user-trigger {
+    width: auto;
+  }
+
+  .header__user-dropdown {
+    left: auto;
+    right: 0;
     transform: none;
   }
 }

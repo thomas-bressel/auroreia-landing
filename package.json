@@ -23,6 +23,8 @@
   "license": "ISC",
   "dependencies": {
     "better-sqlite3": "^12.5.0",
+    "mysql2": "^3.14.0",
+    "bcryptjs": "^2.4.3",
     "nuxt": "^4.2.1",
     "nuxt-security": "^2.0.0",
     "typescript": "^5.9.3",
@@ -31,6 +33,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.10.1",
+    "@types/bcryptjs": "^2.4.6",
     "sharp": "^0.34.5"
   }
 }
