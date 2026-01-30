@@ -1,18 +1,42 @@
+/**
+ * Project Provisioning Service
+ *
+ * Handles the complete lifecycle of Drawer CIS project infrastructure:
+ * - Creates project files from templates
+ * - Starts/stops/restarts Docker containers
+ * - Manages MySQL, Redis, phpMyAdmin, Redis Insight, and File Browser services
+ *
+ * Each project gets its own isolated Docker Compose stack with unique ports.
+ *
+ * Directory structure per project:
+ * /var/www/html/active/auroreia/projects/{projectId}/
+ * ├── docker-compose.project.dev.yml
+ * ├── .env
+ * ├── .project.json
+ * └── mysql-init/
+ *     ├── 01-create-databases.sql
+ *     ├── 02-init-users-db.sql
+ *     └── 03-init-content-db.sql
+ */
 import { randomUUID, randomBytes } from 'crypto'
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { exec } from 'child_process'
 import { promisify } from 'util'
-import bcrypt from 'bcryptjs'
 import { getMySQLPool } from '../utils/mysql'
 
 const execAsync = promisify(exec)
 
-// Chemin vers les projets (hors du container, sur l'hôte)
+/** Base path for all project directories (on host, outside container) */
 const PROJECTS_BASE_PATH = '/var/www/html/active/auroreia/projects'
+
+/** Path to template files for project generation */
 const TEMPLATES_PATH = join(process.cwd(), 'server', 'provisioning', 'templates')
 
-// Ports de base pour les services (incrémentés pour chaque projet)
+/**
+ * Base ports for services. Each new project gets ports offset by project count.
+ * Example: First project gets MySQL 3310, second gets 3311, etc.
+ */
 const BASE_PORTS = {
   mysql: 3310,
   redis: 6380,
@@ -21,6 +45,9 @@ const BASE_PORTS = {
   filebrowser: 8200
 }
 
+/**
+ * Configuration for provisioning a new project
+ */
 interface ProvisioningConfig {
   projectId: string
   projectName: string
@@ -31,8 +58,11 @@ interface ProvisioningConfig {
 }
 
 /**
- * Génère un mot de passe aléatoire sécurisé
- * Note: Évite $ qui est interprété comme variable par Docker Compose
+ * Generates a cryptographically secure random password.
+ * Avoids $ character which is interpreted as variable by Docker Compose.
+ *
+ * @param length - Password length (default: 16)
+ * @returns Generated password string
  */
 function generatePassword(length: number = 16): string {
   const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#%^&*_-+='
@@ -45,12 +75,16 @@ function generatePassword(length: number = 16): string {
 }
 
 /**
- * Récupère le prochain port disponible pour un service
+ * Calculates the next available port for a service.
+ * Port = basePort + number of non-deleted projects.
+ *
+ * @param basePort - Starting port for the service type
+ * @returns Next available port number
  */
 async function getNextAvailablePort(basePort: number): Promise<number> {
   const pool = getMySQLPool()
 
-  // Compte le nombre de projets actifs pour calculer l'offset
+  // Count active projects to calculate port offset
   const [rows] = await pool.execute(
     `SELECT COUNT(*) as count FROM projects WHERE status NOT IN ('deleted')`
   )
@@ -60,7 +94,12 @@ async function getNextAvailablePort(basePort: number): Promise<number> {
 }
 
 /**
- * Remplace les placeholders dans un template
+ * Replaces template placeholders with actual values.
+ * Placeholders use format: {{PLACEHOLDER_NAME}}
+ *
+ * @param content - Template content with placeholders
+ * @param replacements - Map of placeholder names to values
+ * @returns Content with placeholders replaced
  */
 function replacePlaceholders(content: string, replacements: Record<string, string>): string {
   let result = content
@@ -71,7 +110,11 @@ function replacePlaceholders(content: string, replacements: Record<string, strin
 }
 
 /**
- * Crée le dossier du projet avec tous les fichiers nécessaires
+ * Creates all project files from templates.
+ * Generates passwords, assigns ports, and writes configuration files.
+ *
+ * @param config - Project configuration
+ * @returns Object containing assigned ports and generated passwords
  */
 async function createProjectFiles(config: ProvisioningConfig): Promise<{
   mysqlPort: number
@@ -82,23 +125,23 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
   const projectPath = join(PROJECTS_BASE_PATH, config.projectId)
   const mysqlInitPath = join(projectPath, 'mysql-init')
 
-  // Générer les mots de passe
+  // Generate secure passwords for services
   const mysqlRootPassword = generatePassword(20)
   const mysqlPassword = generatePassword(16)
   const redisPassword = generatePassword(16)
 
-  // Récupérer les ports disponibles
+  // Get available ports for all services
   const mysqlPort = await getNextAvailablePort(BASE_PORTS.mysql)
   const redisPort = await getNextAvailablePort(BASE_PORTS.redis)
   const pmaPort = await getNextAvailablePort(BASE_PORTS.pma)
   const redisinsightPort = await getNextAvailablePort(BASE_PORTS.redisinsight)
   const filebrowserPort = await getNextAvailablePort(BASE_PORTS.filebrowser)
 
-  // Créer les dossiers
+  // Create project directories
   await mkdir(projectPath, { recursive: true })
   await mkdir(mysqlInitPath, { recursive: true })
 
-  // Préparer les remplacements
+  // Prepare template replacements
   const adminUuid = randomUUID()
   const replacements: Record<string, string> = {
     PROJECT_ID: config.projectId,
@@ -120,7 +163,7 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
     ADMIN_PASSWORD_HASH: config.adminPasswordHash
   }
 
-  // Lire et écrire chaque template
+  // Process each template file
   const templates = [
     { src: 'docker-compose.project.yml.template', dest: 'docker-compose.project.dev.yml' },
     { src: '.env.template', dest: '.env' },
@@ -145,17 +188,24 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
 }
 
 /**
- * Lance les containers Docker pour le projet
+ * Starts Docker containers for a project using docker-compose.
+ * Waits for MySQL container to be fully ready before returning.
+ *
+ * Note: Uses /bin/sh with `. ./.env` (POSIX syntax) because Alpine Linux
+ * doesn't have bash. The `source` command is bash-specific.
+ *
+ * @param projectId - Project identifier
+ * @throws Error if containers fail to start or MySQL doesn't become ready
  */
 async function startProjectContainers(projectId: string): Promise<void> {
   const projectPath = join(PROJECTS_BASE_PATH, projectId)
 
   try {
-    console.log(`[Provisioning] Lancement docker-compose pour ${projectId}...`)
+    console.log(`[Provisioning] Starting docker-compose for ${projectId}...`)
 
-    // Lancer docker-compose en exportant les variables du .env
-    // Note: --env-file ne fonctionne pas bien depuis un container, donc on source le fichier
-    // Utiliser /bin/sh car Alpine n'a pas bash (. au lieu de source)
+    // Start containers with environment variables from .env file
+    // Note: --env-file doesn't work well from inside a container, so we source the file
+    // Using /bin/sh because Alpine doesn't have bash (. instead of source)
     const { stdout, stderr } = await execAsync(
       `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f docker-compose.project.dev.yml up -d`,
       { timeout: 120000, shell: '/bin/sh' }
@@ -163,8 +213,8 @@ async function startProjectContainers(projectId: string): Promise<void> {
     console.log(`[Provisioning] docker-compose stdout: ${stdout}`)
     if (stderr) console.log(`[Provisioning] docker-compose stderr: ${stderr}`)
 
-    // Attendre que le container MySQL soit running (jusqu'à 60 secondes)
-    console.log(`[Provisioning] Attente du container MySQL...`)
+    // Wait for MySQL container to be running (up to 60 seconds)
+    console.log(`[Provisioning] Waiting for MySQL container...`)
     let mysqlReady = false
     for (let i = 0; i < 30; i++) {
       try {
@@ -173,30 +223,36 @@ async function startProjectContainers(projectId: string): Promise<void> {
           { timeout: 5000 }
         )
         if (status.trim() === 'running') {
-          // Attendre encore un peu que MySQL soit vraiment prêt
+          // Wait a bit more for MySQL to fully initialize
           await new Promise(resolve => setTimeout(resolve, 5000))
           mysqlReady = true
-          console.log(`[Provisioning] Container MySQL running après ${(i + 1) * 2} secondes`)
+          console.log(`[Provisioning] MySQL container running after ${(i + 1) * 2} seconds`)
           break
         }
       } catch (e) {
-        console.log(`[Provisioning] Attente... (${i + 1}/30)`)
+        console.log(`[Provisioning] Waiting... (${i + 1}/30)`)
       }
       await new Promise(resolve => setTimeout(resolve, 2000))
     }
 
     if (!mysqlReady) {
-      console.error(`[Provisioning] MySQL n'a pas démarré dans les temps`)
-      throw new Error('MySQL n\'a pas démarré dans les temps')
+      console.error(`[Provisioning] MySQL failed to start in time`)
+      throw new Error('MySQL failed to start in time')
     }
   } catch (error) {
-    console.error('[Provisioning] Erreur lors du démarrage des containers:', error)
+    console.error('[Provisioning] Error starting containers:', error)
     throw error
   }
 }
 
 /**
- * Met à jour le statut du projet dans la base plateforme
+ * Updates project status in the platform database.
+ * Optionally sets MySQL and Redis host addresses.
+ *
+ * @param projectId - Project identifier
+ * @param status - New status value
+ * @param mysqlHost - Optional MySQL container hostname
+ * @param redisHost - Optional Redis container hostname
  */
 async function updateProjectStatus(
   projectId: string,
@@ -220,7 +276,19 @@ async function updateProjectStatus(
 }
 
 /**
- * Provisionne un nouveau projet complet
+ * Provisions a complete new project.
+ * Creates files, starts containers, and updates status.
+ *
+ * Status flow: pending -> provisioning -> active
+ * On error: reverts to pending status
+ *
+ * @param projectId - Unique project identifier
+ * @param projectName - Human-readable project name
+ * @param ownerId - UUID of the project owner
+ * @param ownerEmail - Email of the project owner
+ * @param adminUsername - Drawer admin username
+ * @param adminPasswordHash - Bcrypt hash of Drawer admin password
+ * @returns Success status and optional error message
  */
 export async function provisionProject(
   projectId: string,
@@ -231,15 +299,15 @@ export async function provisionProject(
   adminPasswordHash: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log(`[Provisioning] ========== DÉMARRAGE pour ${projectId} ==========`)
+    console.log(`[Provisioning] ========== STARTING for ${projectId} ==========`)
 
-    // 1. Mettre à jour le statut à "provisioning"
-    console.log(`[Provisioning] Étape 1: Mise à jour status -> provisioning`)
+    // Step 1: Update status to "provisioning"
+    console.log(`[Provisioning] Step 1: Updating status -> provisioning`)
     await updateProjectStatus(projectId, 'provisioning')
-    console.log(`[Provisioning] Étape 1: OK`)
+    console.log(`[Provisioning] Step 1: OK`)
 
-    // 2. Créer les fichiers du projet
-    console.log(`[Provisioning] Étape 2: Création des fichiers...`)
+    // Step 2: Create project files from templates
+    console.log(`[Provisioning] Step 2: Creating project files...`)
     const { mysqlPort, redisPort } = await createProjectFiles({
       projectId,
       projectName,
@@ -248,29 +316,29 @@ export async function provisionProject(
       adminUsername,
       adminPasswordHash
     })
-    console.log(`[Provisioning] Étape 2: OK - Fichiers créés`)
+    console.log(`[Provisioning] Step 2: OK - Files created`)
 
-    // 3. Démarrer les containers
-    console.log(`[Provisioning] Étape 3: Démarrage des containers...`)
+    // Step 3: Start Docker containers
+    console.log(`[Provisioning] Step 3: Starting containers...`)
     await startProjectContainers(projectId)
-    console.log(`[Provisioning] Étape 3: OK - Containers démarrés`)
+    console.log(`[Provisioning] Step 3: OK - Containers started`)
 
-    // 4. Mettre à jour le statut à "active"
-    console.log(`[Provisioning] Étape 4: Mise à jour status -> active`)
+    // Step 4: Update status to "active" with host info
+    console.log(`[Provisioning] Step 4: Updating status -> active`)
     const mysqlHost = `mysql-${projectId}`
     const redisHost = `redis-${projectId}`
     await updateProjectStatus(projectId, 'active', mysqlHost, redisHost)
-    console.log(`[Provisioning] Étape 4: OK`)
+    console.log(`[Provisioning] Step 4: OK`)
 
-    console.log(`[Provisioning] ========== SUCCÈS pour ${projectId} ==========`)
+    console.log(`[Provisioning] ========== SUCCESS for ${projectId} ==========`)
     console.log(`[Provisioning]   - MySQL: localhost:${mysqlPort}`)
     console.log(`[Provisioning]   - Redis: localhost:${redisPort}`)
 
     return { success: true }
   } catch (error: any) {
-    console.error(`[Provisioning] Erreur pour ${projectId}:`, error)
+    console.error(`[Provisioning] Error for ${projectId}:`, error)
 
-    // Remettre le statut à "pending" en cas d'erreur
+    // Revert status to "pending" on error
     await updateProjectStatus(projectId, 'pending')
 
     return { success: false, error: error.message }
@@ -278,43 +346,52 @@ export async function provisionProject(
 }
 
 /**
- * Arrête les containers d'un projet (sans supprimer les volumes ni les fichiers)
+ * Stops Docker containers for a project without removing volumes.
+ * Used for soft delete (moving to trash) to free up RAM while preserving data.
+ *
+ * @param projectId - Project identifier
+ * @returns Success status and optional error message
  */
 export async function stopProjectContainers(projectId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const projectPath = join(PROJECTS_BASE_PATH, projectId)
 
-    console.log(`[StopContainers] Arrêt des containers pour ${projectId}...`)
+    console.log(`[StopContainers] Stopping containers for ${projectId}...`)
 
     await execAsync(
       `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f docker-compose.project.dev.yml stop`,
       { timeout: 60000, shell: '/bin/sh' }
     )
 
-    console.log(`[StopContainers] Containers arrêtés pour ${projectId}`)
+    console.log(`[StopContainers] Containers stopped for ${projectId}`)
     return { success: true }
   } catch (error: any) {
-    console.error(`[StopContainers] Erreur pour ${projectId}:`, error)
+    console.error(`[StopContainers] Error for ${projectId}:`, error)
     return { success: false, error: error.message }
   }
 }
 
 /**
- * Redémarre les containers d'un projet existant
+ * Restarts stopped Docker containers for a project.
+ * Used when restoring a project from trash.
+ * Waits for MySQL container to be ready before returning.
+ *
+ * @param projectId - Project identifier
+ * @returns Success status and optional error message
  */
 export async function restartProjectContainers(projectId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const projectPath = join(PROJECTS_BASE_PATH, projectId)
 
-    console.log(`[RestartContainers] Redémarrage des containers pour ${projectId}...`)
+    console.log(`[RestartContainers] Restarting containers for ${projectId}...`)
 
     await execAsync(
       `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f docker-compose.project.dev.yml start`,
       { timeout: 120000, shell: '/bin/sh' }
     )
 
-    // Attendre que MySQL soit prêt
-    console.log(`[RestartContainers] Attente du container MySQL...`)
+    // Wait for MySQL container to be ready
+    console.log(`[RestartContainers] Waiting for MySQL container...`)
     for (let i = 0; i < 15; i++) {
       try {
         const { stdout: status } = await execAsync(
@@ -322,53 +399,58 @@ export async function restartProjectContainers(projectId: string): Promise<{ suc
           { timeout: 5000 }
         )
         if (status.trim() === 'running') {
-          console.log(`[RestartContainers] Containers redémarrés pour ${projectId}`)
+          console.log(`[RestartContainers] Containers restarted for ${projectId}`)
           return { success: true }
         }
       } catch (e) {
-        console.log(`[RestartContainers] Attente... (${i + 1}/15)`)
+        console.log(`[RestartContainers] Waiting... (${i + 1}/15)`)
       }
       await new Promise(resolve => setTimeout(resolve, 2000))
     }
 
     return { success: true }
   } catch (error: any) {
-    console.error(`[RestartContainers] Erreur pour ${projectId}:`, error)
+    console.error(`[RestartContainers] Error for ${projectId}:`, error)
     return { success: false, error: error.message }
   }
 }
 
 /**
- * Supprime un projet (arrête les containers et supprime les fichiers)
+ * Completely removes a project (hard delete).
+ * Stops and removes containers, deletes volumes, and removes all project files.
+ * This action is IRREVERSIBLE.
+ *
+ * @param projectId - Project identifier
+ * @returns Success status and optional error message
  */
 export async function deprovisionProject(projectId: string): Promise<{ success: boolean; error?: string }> {
   try {
     const projectPath = join(PROJECTS_BASE_PATH, projectId)
 
-    console.log(`[Deprovisioning] Arrêt des containers pour ${projectId}...`)
+    console.log(`[Deprovisioning] Stopping containers for ${projectId}...`)
 
-    // Arrêter et supprimer les containers
+    // Stop and remove containers with volumes
     try {
       await execAsync(
         `cd ${projectPath} && docker compose -p ${projectId} --env-file .env -f docker-compose.project.dev.yml down -v`,
         { timeout: 60000 }
       )
     } catch (e) {
-      console.warn(`[Deprovisioning] Containers peut-être déjà arrêtés:`, e)
+      console.warn(`[Deprovisioning] Containers may already be stopped:`, e)
     }
 
-    // Supprimer le dossier du projet
-    console.log(`[Deprovisioning] Suppression des fichiers...`)
+    // Delete project directory and all files
+    console.log(`[Deprovisioning] Deleting files...`)
     await execAsync(`rm -rf ${projectPath}`, { timeout: 30000 })
 
-    // Mettre à jour le statut
+    // Update status in database
     await updateProjectStatus(projectId, 'deleted')
 
-    console.log(`[Deprovisioning] Projet ${projectId} supprimé avec succès !`)
+    console.log(`[Deprovisioning] Project ${projectId} deleted successfully!`)
 
     return { success: true }
   } catch (error: any) {
-    console.error(`[Deprovisioning] Erreur pour ${projectId}:`, error)
+    console.error(`[Deprovisioning] Error for ${projectId}:`, error)
     return { success: false, error: error.message }
   }
 }

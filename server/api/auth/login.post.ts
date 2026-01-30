@@ -1,3 +1,18 @@
+/**
+ * Login API Endpoint
+ *
+ * POST /api/auth/login
+ *
+ * Authenticates a user with email and password credentials.
+ * Creates a session cookie on successful authentication.
+ *
+ * @param body.email - User's email address
+ * @param body.password - User's password
+ * @returns Owner info and success status
+ * @throws 400 - Missing email or password
+ * @throws 401 - Invalid credentials
+ * @throws 403 - Account suspended
+ */
 import bcrypt from 'bcryptjs'
 import { getMySQLPool } from '../../utils/mysql'
 import { createSession } from '../../utils/session'
@@ -10,7 +25,7 @@ interface LoginBody {
 export default defineEventHandler(async (event) => {
   const body = await readBody<LoginBody>(event)
 
-  // Validation
+  // Validate required fields
   if (!body.email || !body.password) {
     throw createError({
       statusCode: 400,
@@ -20,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
   const pool = getMySQLPool()
 
-  // Récupérer l'owner par email
+  // Fetch owner by email (case-insensitive)
   const [rows] = await pool.execute(
     `SELECT id, email, password_hash as passwordHash, display_name as displayName, status
      FROM owners
@@ -38,7 +53,7 @@ export default defineEventHandler(async (event) => {
 
   const owner = owners[0]
 
-  // Vérifier le mot de passe
+  // Verify password against stored hash
   const passwordValid = await bcrypt.compare(body.password, owner.passwordHash)
   if (!passwordValid) {
     throw createError({
@@ -47,7 +62,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Vérifier si le compte est suspendu
+  // Check if account is suspended
   if (owner.status === 'suspended') {
     throw createError({
       statusCode: 403,
@@ -55,7 +70,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Créer une session
+  // Create session cookie with user agent and IP for security tracking
   const userAgent = getHeader(event, 'user-agent')
   const ip = getHeader(event, 'x-forwarded-for') || getHeader(event, 'x-real-ip')
   await createSession(event, owner.id, userAgent, ip || undefined)

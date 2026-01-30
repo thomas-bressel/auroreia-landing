@@ -289,14 +289,14 @@ const newProject = reactive({
 const projectToDelete = ref<any>(null)
 const isDeleting = ref(false)
 
-// Corbeille
+// Trash management state
 const projectToHardDelete = ref<any>(null)
 const isHardDeleting = ref(false)
 const isRestoring = ref<string | null>(null)
 const showEmptyTrashModal = ref(false)
 const isEmptyingTrash = ref(false)
 
-// Filtres pour séparer les projets actifs et supprimés
+// Computed filters to separate active projects from deleted ones
 const activeProjects = computed(() => projects.value.filter(p => p.status !== 'deleted'))
 const deletedProjects = computed(() => projects.value.filter(p => p.status === 'deleted'))
 
@@ -308,7 +308,7 @@ const statusLabels: Record<string, string> = {
   deleted: 'Supprimé'
 }
 
-// Charger les projets au montage
+// Fetch projects on component mount
 onMounted(() => {
   fetchProjects()
 })
@@ -337,7 +337,7 @@ async function handleCreateProject() {
       newProject.drawerPassword
     )
     showCreateModal.value = false
-    // Reset form
+    // Reset form fields
     newProject.displayName = ''
     newProject.drawerUsername = ''
     newProject.drawerPassword = ''
@@ -376,7 +376,7 @@ async function handleProvision(projectId: string) {
     provisioningProjectId.value = projectId
     await provisionProject(projectId)
 
-    // Rafraîchir périodiquement pour voir le changement de statut
+    // Poll periodically to detect status change
     const interval = setInterval(async () => {
       await fetchProjects()
       const project = projects.value.find(p => p.id === projectId)
@@ -386,7 +386,7 @@ async function handleProvision(projectId: string) {
       }
     }, 3000)
 
-    // Timeout après 2 minutes
+    // Timeout after 2 minutes to prevent infinite polling
     setTimeout(() => {
       clearInterval(interval)
       provisioningProjectId.value = null
@@ -397,7 +397,7 @@ async function handleProvision(projectId: string) {
   }
 }
 
-// Fonctions corbeille
+// Trash management functions
 async function handleRestore(projectId: string) {
   if (isRestoring.value) return
 
@@ -440,7 +440,7 @@ async function handleEmptyTrash() {
 
   try {
     isEmptyingTrash.value = true
-    // Supprimer tous les projets dans la corbeille un par un
+    // Delete all projects in trash one by one
     for (const project of deletedProjects.value) {
       await hardDeleteProject(project.id)
     }

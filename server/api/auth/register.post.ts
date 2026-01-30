@@ -1,3 +1,19 @@
+/**
+ * Registration API Endpoint
+ *
+ * POST /api/auth/register
+ *
+ * Creates a new owner account with 'pending' status.
+ * New accounts require admin approval before they can access the dashboard.
+ * A session is created immediately to allow viewing the pending approval page.
+ *
+ * @param body.email - User's email address (must be unique)
+ * @param body.password - User's password (min 8 characters)
+ * @param body.displayName - Optional display name
+ * @returns Owner info with pending status
+ * @throws 400 - Invalid input (missing fields, invalid email format, weak password)
+ * @throws 409 - Email already registered
+ */
 import { randomUUID } from 'crypto'
 import bcrypt from 'bcryptjs'
 import { getMySQLPool } from '../../utils/mysql'
@@ -12,7 +28,7 @@ interface RegisterBody {
 export default defineEventHandler(async (event) => {
   const body = await readBody<RegisterBody>(event)
 
-  // Validation
+  // Validate required fields
   if (!body.email || !body.password) {
     throw createError({
       statusCode: 400,
@@ -20,7 +36,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Validation email basique
+  // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   if (!emailRegex.test(body.email)) {
     throw createError({
@@ -29,7 +45,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Validation mot de passe (minimum 8 caractères)
+  // Validate password strength (minimum 8 characters)
   if (body.password.length < 8) {
     throw createError({
       statusCode: 400,
@@ -39,7 +55,7 @@ export default defineEventHandler(async (event) => {
 
   const pool = getMySQLPool()
 
-  // Vérifier si l'email existe déjà
+  // Check if email is already registered
   const [existing] = await pool.execute(
     'SELECT id FROM owners WHERE email = ?',
     [body.email.toLowerCase()]
@@ -52,10 +68,10 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Hasher le mot de passe
+  // Hash password with bcrypt (cost factor 12)
   const passwordHash = await bcrypt.hash(body.password, 12)
 
-  // Créer l'owner avec status "pending" (en attente d'approbation)
+  // Create owner account with 'pending' status (requires admin approval)
   const ownerId = randomUUID()
   await pool.execute(
     `INSERT INTO owners (id, email, password_hash, display_name, status)
@@ -63,7 +79,7 @@ export default defineEventHandler(async (event) => {
     [ownerId, body.email.toLowerCase(), passwordHash, body.displayName || null]
   )
 
-  // Créer une session (même en pending, pour pouvoir afficher la page d'attente)
+  // Create session immediately to allow viewing the pending approval page
   const userAgent = getHeader(event, 'user-agent')
   const ip = getHeader(event, 'x-forwarded-for') || getHeader(event, 'x-real-ip')
   await createSession(event, ownerId, userAgent, ip || undefined)

@@ -1,9 +1,27 @@
+/**
+ * Provision Project API Endpoint
+ *
+ * POST /api/projects/:id/provision
+ *
+ * Starts the provisioning process for a project.
+ * Creates Docker infrastructure: MySQL, Redis, phpMyAdmin, Redis Insight, File Browser.
+ * Runs asynchronously in the background - returns immediately.
+ * Project status changes: pending -> provisioning -> active
+ *
+ * Note: In production, this should use a job queue (Bull, etc.) for better reliability.
+ *
+ * @param id - Project ID (route parameter)
+ * @returns Success status and project ID
+ * @throws 400 - Project not in 'pending' status
+ * @throws 401 - Not authenticated
+ * @throws 404 - Project not found
+ */
 import { getMySQLPool } from '../../../utils/mysql'
 import { getSessionOwner } from '../../../utils/session'
 import { provisionProject } from '../../../provisioning/provisioning.service'
 
 export default defineEventHandler(async (event) => {
-  // Vérifier l'authentification
+  // Verify authentication
   const owner = await getSessionOwner(event)
   if (!owner) {
     throw createError({
@@ -22,7 +40,7 @@ export default defineEventHandler(async (event) => {
 
   const pool = getMySQLPool()
 
-  // Récupérer le projet et vérifier qu'il appartient à l'owner
+  // Fetch project and verify ownership
   const [rows] = await pool.execute(
     `SELECT id, display_name as displayName, status, drawer_admin_username as adminUsername,
             drawer_admin_password_hash as adminPasswordHash
@@ -41,7 +59,7 @@ export default defineEventHandler(async (event) => {
 
   const project = projects[0]
 
-  // Vérifier que le projet est en status "pending"
+  // Only projects in 'pending' status can be provisioned
   if (project.status !== 'pending') {
     throw createError({
       statusCode: 400,
@@ -49,8 +67,8 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Lancer le provisioning (en arrière-plan pour ne pas bloquer la requête)
-  // Note: En production, on utiliserait une queue de jobs (Bull, etc.)
+  // Start provisioning in background (non-blocking)
+  // Note: In production, use a job queue (Bull, etc.) for better reliability
   provisionProject(
     projectId,
     project.displayName,
@@ -60,9 +78,9 @@ export default defineEventHandler(async (event) => {
     project.adminPasswordHash
   ).then(result => {
     if (result.success) {
-      console.log(`[API] Provisioning de ${projectId} terminé avec succès`)
+      console.log(`[API] Provisioning of ${projectId} completed successfully`)
     } else {
-      console.error(`[API] Provisioning de ${projectId} échoué:`, result.error)
+      console.error(`[API] Provisioning of ${projectId} failed:`, result.error)
     }
   })
 

@@ -1,9 +1,24 @@
+/**
+ * Restore Project API Endpoint
+ *
+ * POST /api/projects/:id/restore
+ *
+ * Restores a project from the trash to its previous status.
+ * If the project was previously active, restarts the Docker containers.
+ * Project data is preserved since soft delete only stops containers.
+ *
+ * @param id - Project ID (route parameter)
+ * @returns Success status and restored project status
+ * @throws 400 - Project not in trash
+ * @throws 401 - Not authenticated
+ * @throws 404 - Project not found
+ */
 import { getMySQLPool } from '../../../utils/mysql'
 import { getSessionOwner } from '../../../utils/session'
 import { restartProjectContainers } from '../../../provisioning/provisioning.service'
 
 export default defineEventHandler(async (event) => {
-  // Vérifier l'authentification
+  // Verify authentication
   const owner = await getSessionOwner(event)
   if (!owner) {
     throw createError({
@@ -22,7 +37,7 @@ export default defineEventHandler(async (event) => {
 
   const pool = getMySQLPool()
 
-  // Vérifier que le projet appartient à l'owner et est dans la corbeille
+  // Verify project belongs to owner and is in trash
   const [rows] = await pool.execute(
     'SELECT id, status, previous_status FROM projects WHERE id = ? AND owner_id = ?',
     [projectId, owner.id]
@@ -38,7 +53,7 @@ export default defineEventHandler(async (event) => {
 
   const project = projects[0]
 
-  // On ne peut restaurer que les projets dans la corbeille
+  // Only trashed projects can be restored
   if (project.status !== 'deleted') {
     throw createError({
       statusCode: 400,
@@ -46,19 +61,20 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Restaurer le projet dans son état précédent
+  // Determine the status to restore to (fallback to 'pending' if not set)
   const restoreStatus = project.previous_status || 'pending'
 
-  // Si le projet était actif, redémarrer les conteneurs
+  // If project was previously active, restart Docker containers
   if (restoreStatus === 'active') {
-    console.log(`[Restore] Redémarrage des conteneurs pour ${projectId}...`)
+    console.log(`[Restore] Restarting containers for ${projectId}...`)
     const result = await restartProjectContainers(projectId)
     if (!result.success) {
-      console.warn(`[Restore] Erreur lors du redémarrage des conteneurs: ${result.error}`)
-      // On restaure quand même le statut, l'utilisateur pourra relancer manuellement
+      console.warn(`[Restore] Error restarting containers: ${result.error}`)
+      // Continue with status restore - user can manually retry container start
     }
   }
 
+  // Restore status and clear previous_status field
   await pool.execute(
     `UPDATE projects SET status = ?, previous_status = NULL, updated_at = NOW() WHERE id = ?`,
     [restoreStatus, projectId]

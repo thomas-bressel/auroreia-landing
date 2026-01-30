@@ -74,7 +74,7 @@ async function logout() {
   try {
     await $fetch('/api/auth/logout', { method: 'POST' })
   } catch (e) {
-    // Ignore
+    // Ignore logout errors
   }
   router.push('/login')
 }

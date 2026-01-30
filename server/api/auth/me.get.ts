@@ -1,3 +1,14 @@
+/**
+ * Current User API Endpoint
+ *
+ * GET /api/auth/me
+ *
+ * Returns information about the currently authenticated user.
+ * Used by the frontend to check authentication status and get user data.
+ *
+ * @returns Owner info and approval status
+ * @throws 401 - Not authenticated (no valid session)
+ */
 import { getSessionOwner } from '../../utils/session'
 
 export default defineEventHandler(async (event) => {

@@ -1,9 +1,25 @@
+/**
+ * Soft Delete Project API Endpoint
+ *
+ * DELETE /api/projects/:id
+ *
+ * Moves a project to the trash (soft delete).
+ * Stops Docker containers to free up server RAM.
+ * The previous status is saved to allow restoration.
+ * Project data and volumes are preserved for recovery.
+ *
+ * @param id - Project ID (route parameter)
+ * @returns Success status
+ * @throws 400 - Project already in trash
+ * @throws 401 - Not authenticated
+ * @throws 404 - Project not found or doesn't belong to user
+ */
 import { getMySQLPool } from '../../utils/mysql'
 import { getSessionOwner } from '../../utils/session'
 import { stopProjectContainers } from '../../provisioning/provisioning.service'
 
 export default defineEventHandler(async (event) => {
-  // Vérifier l'authentification
+  // Verify authentication
   const owner = await getSessionOwner(event)
   if (!owner) {
     throw createError({
@@ -22,7 +38,7 @@ export default defineEventHandler(async (event) => {
 
   const pool = getMySQLPool()
 
-  // Vérifier que le projet appartient à l'owner
+  // Verify project belongs to the authenticated owner
   const [rows] = await pool.execute(
     'SELECT id, status FROM projects WHERE id = ? AND owner_id = ?',
     [projectId, owner.id]
@@ -38,6 +54,7 @@ export default defineEventHandler(async (event) => {
 
   const project = projects[0]
 
+  // Prevent double-deletion
   if (project.status === 'deleted') {
     throw createError({
       statusCode: 400,
@@ -45,16 +62,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  // Si le projet était actif ou en provisioning, arrêter les conteneurs pour libérer la RAM
+  // Stop containers if project was active/provisioning to free up server RAM
   if (project.status === 'active' || project.status === 'provisioning') {
-    console.log(`[Delete] Arrêt des conteneurs pour ${projectId}...`)
+    console.log(`[Delete] Stopping containers for ${projectId}...`)
     const result = await stopProjectContainers(projectId)
     if (!result.success) {
-      console.warn(`[Delete] Erreur lors de l'arrêt des conteneurs: ${result.error}`)
+      console.warn(`[Delete] Error stopping containers: ${result.error}`)
     }
   }
 
-  // Sauvegarder le statut précédent pour pouvoir restaurer
+  // Save previous status for restoration, then mark as deleted
   await pool.execute(
     `UPDATE projects SET previous_status = status, status = 'deleted', updated_at = NOW() WHERE id = ?`,
     [projectId]

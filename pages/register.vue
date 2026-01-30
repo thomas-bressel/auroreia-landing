@@ -90,7 +90,7 @@ const errorMessage = ref('')
 async function handleSubmit() {
   if (isLoading.value) return
 
-  // Validation
+  // Client-side validation
   if (password.value !== confirmPassword.value) {
     errorMessage.value = 'Les mots de passe ne correspondent pas'
     return

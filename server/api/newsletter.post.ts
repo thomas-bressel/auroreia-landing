@@ -1,3 +1,16 @@
+/**
+ * Newsletter Subscription API Endpoint
+ *
+ * POST /api/newsletter
+ *
+ * Subscribes an email address to the newsletter.
+ * Includes honeypot protection against bots and duplicate prevention.
+ * Stores subscriber data in SQLite database (separate from main MySQL).
+ *
+ * @param body.email - Email address to subscribe
+ * @param body.honeypot - Hidden field for bot detection (should be empty)
+ * @returns Success status and message
+ */
 import { getDatabase } from '../utils/db'
 
 export default defineEventHandler(async (event) => {
@@ -5,7 +18,7 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event)
     const { email, honeypot } = body
 
-    // Protection honeypot : si le champ est rempli, c'est un bot
+    // Honeypot protection: if field is filled, it's a bot
     if (honeypot) {
       console.warn('Bot detected via honeypot field')
       return {
@@ -14,7 +27,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Validation de l'email
+    // Validate email is provided
     if (!email || typeof email !== 'string') {
       return {
         success: false,
@@ -22,7 +35,7 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Validation format email
+    // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       return {
@@ -31,12 +44,12 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Récupérer des informations contextuelles
+    // Collect contextual information for analytics/security
     const headers = getHeaders(event)
     const ipAddress = headers['x-forwarded-for'] || headers['x-real-ip'] || 'unknown'
     const userAgent = headers['user-agent'] || 'unknown'
 
-    // Insérer dans la base de données
+    // Insert into SQLite database
     const db = getDatabase()
 
     try {
@@ -52,7 +65,7 @@ export default defineEventHandler(async (event) => {
         message: 'Inscription réussie ! Merci de votre intérêt.'
       }
     } catch (dbError: any) {
-      // Gérer les doublons (UNIQUE constraint)
+      // Handle duplicate email (UNIQUE constraint violation)
       if (dbError.code === 'SQLITE_CONSTRAINT_UNIQUE') {
         return {
           success: false,

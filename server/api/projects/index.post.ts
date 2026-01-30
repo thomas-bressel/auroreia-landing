@@ -1,3 +1,19 @@
+/**
+ * Create Project API Endpoint
+ *
+ * POST /api/projects
+ *
+ * Creates a new Drawer CIS project with 'pending' status.
+ * The project must be provisioned separately to create its Docker infrastructure.
+ * Stores the Drawer admin credentials for the project.
+ *
+ * @param body.displayName - Human-readable project name (3-100 chars)
+ * @param body.drawerUsername - Admin username for Drawer (3-50 chars)
+ * @param body.drawerPassword - Admin password for Drawer (min 8 chars)
+ * @returns Created project info with generated ID
+ * @throws 400 - Invalid input
+ * @throws 401 - Not authenticated
+ */
 import { randomBytes } from 'crypto'
 import bcrypt from 'bcryptjs'
 import { getMySQLPool } from '../../utils/mysql'
@@ -10,7 +26,10 @@ interface CreateProjectBody {
 }
 
 /**
- * Génère un ID de projet unique : proj_xxxxxxxx
+ * Generates a unique project ID in format: proj_xxxxxxxx
+ * Uses cryptographically secure random bytes.
+ *
+ * @returns Unique project identifier string
  */
 function generateProjectId(): string {
   const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
@@ -23,7 +42,7 @@ function generateProjectId(): string {
 }
 
 export default defineEventHandler(async (event) => {
-  // Vérifier l'authentification
+  // Verify authentication
   const owner = await getSessionOwner(event)
   if (!owner) {
     throw createError({
@@ -34,7 +53,7 @@ export default defineEventHandler(async (event) => {
 
   const body = await readBody<CreateProjectBody>(event)
 
-  // Validation
+  // Validate required fields
   if (!body.displayName || !body.drawerUsername || !body.drawerPassword) {
     throw createError({
       statusCode: 400,
@@ -42,6 +61,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Validate display name length
   if (body.displayName.length < 3 || body.displayName.length > 100) {
     throw createError({
       statusCode: 400,
@@ -49,6 +69,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Validate Drawer username length
   if (body.drawerUsername.length < 3 || body.drawerUsername.length > 50) {
     throw createError({
       statusCode: 400,
@@ -56,6 +77,7 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Validate Drawer password strength
   if (body.drawerPassword.length < 8) {
     throw createError({
       statusCode: 400,
@@ -65,19 +87,19 @@ export default defineEventHandler(async (event) => {
 
   const pool = getMySQLPool()
 
-  // Générer un ID unique
+  // Generate unique project ID
   let projectId = generateProjectId()
 
-  // Vérifier que l'ID n'existe pas déjà (rare mais possible)
+  // Ensure ID doesn't already exist (extremely rare but possible)
   const [existing] = await pool.execute('SELECT id FROM projects WHERE id = ?', [projectId])
   if ((existing as any[]).length > 0) {
-    projectId = generateProjectId() // Regénérer
+    projectId = generateProjectId()
   }
 
-  // Hasher le mot de passe Drawer
+  // Hash Drawer admin password with bcrypt
   const drawerPasswordHash = await bcrypt.hash(body.drawerPassword, 12)
 
-  // Créer le projet (status = pending, sera provisionné ensuite)
+  // Create project record (status = pending, will be provisioned separately)
   await pool.execute(
     `INSERT INTO projects (id, owner_id, display_name, status, drawer_admin_username, drawer_admin_password_hash)
      VALUES (?, ?, ?, 'pending', ?, ?)`,
