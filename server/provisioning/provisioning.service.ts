@@ -246,26 +246,110 @@ async function startProjectContainers(projectId: string): Promise<void> {
 }
 
 /**
+ * Connects Drawer APIs (user-api and content-api) to a project's Docker network.
+ * This allows the APIs to communicate with the project's MySQL and Redis containers.
+ *
+ * This is a "hot connect" - no restart needed for the API containers.
+ * If already connected, Docker will simply ignore the command.
+ *
+ * @param projectId - Project identifier
+ */
+async function connectApisToProjectNetwork(projectId: string): Promise<void> {
+  const projectNetworkName = `${projectId}-net`
+  const auroreaNetworkName = 'auroreia_auroreia-net'
+  const apiContainers = ['drawer-nodejs-user-api-1', 'drawer-nodejs-content-api-1']
+
+  for (const container of apiContainers) {
+    // Connect to project network (for MySQL/Redis access)
+    try {
+      await execAsync(`docker network connect ${projectNetworkName} ${container}`, { timeout: 10000 })
+      console.log(`[Provisioning] Connected ${container} to ${projectNetworkName}`)
+    } catch (error: any) {
+      if (error.message?.includes('already exists') || error.stderr?.includes('already exists')) {
+        console.log(`[Provisioning] ${container} already connected to ${projectNetworkName}`)
+      } else {
+        console.warn(`[Provisioning] Warning: Could not connect ${container} to ${projectNetworkName}:`, error.message)
+      }
+    }
+
+    // Connect to AuroreIA network (for credentials API access)
+    try {
+      await execAsync(`docker network connect ${auroreaNetworkName} ${container}`, { timeout: 10000 })
+      console.log(`[Provisioning] Connected ${container} to ${auroreaNetworkName}`)
+    } catch (error: any) {
+      if (error.message?.includes('already exists') || error.stderr?.includes('already exists')) {
+        console.log(`[Provisioning] ${container} already connected to ${auroreaNetworkName}`)
+      } else {
+        console.warn(`[Provisioning] Warning: Could not connect ${container} to ${auroreaNetworkName}:`, error.message)
+      }
+    }
+  }
+}
+
+
+/**
+ * Disconnects Drawer APIs from a project's Docker network.
+ * Called during deprovisioning to clean up network connections.
+ *
+ * @param projectId - Project identifier
+ */
+async function disconnectApisFromProjectNetwork(projectId: string): Promise<void> {
+  const networkName = `${projectId}-net`
+  const apiContainers = ['drawer-nodejs-user-api-1', 'drawer-nodejs-content-api-1']
+
+  for (const container of apiContainers) {
+    try {
+      await execAsync(`docker network disconnect ${networkName} ${container}`, { timeout: 10000 })
+      console.log(`[Deprovisioning] Disconnected ${container} from ${networkName}`)
+    } catch (error: any) {
+      // Ignore "not connected" errors
+      console.warn(`[Deprovisioning] Warning: Could not disconnect ${container} from ${networkName}:`, error.message)
+    }
+  }
+}
+
+
+/**
  * Updates project status in the platform database.
- * Optionally sets MySQL and Redis host addresses.
+ * Optionally sets MySQL and Redis host addresses and credentials.
  *
  * @param projectId - Project identifier
  * @param status - New status value
- * @param mysqlHost - Optional MySQL container hostname
- * @param redisHost - Optional Redis container hostname
+ * @param options - Optional connection info and credentials
  */
 async function updateProjectStatus(
   projectId: string,
   status: string,
-  mysqlHost?: string,
-  redisHost?: string
+  options?: {
+    mysqlHost?: string
+    redisHost?: string
+    mysqlUser?: string
+    mysqlPassword?: string
+    redisPassword?: string
+  }
 ): Promise<void> {
   const pool = getMySQLPool()
 
-  if (mysqlHost && redisHost) {
+  if (options?.mysqlHost && options?.redisHost) {
     await pool.execute(
-      `UPDATE projects SET status = ?, mysql_host = ?, redis_host = ?, updated_at = NOW() WHERE id = ?`,
-      [status, mysqlHost, redisHost, projectId]
+      `UPDATE projects SET
+        status = ?,
+        mysql_host = ?,
+        redis_host = ?,
+        mysql_user = ?,
+        mysql_password = ?,
+        redis_password = ?,
+        updated_at = NOW()
+      WHERE id = ?`,
+      [
+        status,
+        options.mysqlHost,
+        options.redisHost,
+        options.mysqlUser || 'admin',
+        options.mysqlPassword || null,
+        options.redisPassword || null,
+        projectId
+      ]
     )
   } else {
     await pool.execute(
@@ -308,7 +392,7 @@ export async function provisionProject(
 
     // Step 2: Create project files from templates
     console.log(`[Provisioning] Step 2: Creating project files...`)
-    const { mysqlPort, redisPort } = await createProjectFiles({
+    const { mysqlPort, redisPort, mysqlPassword, redisPassword } = await createProjectFiles({
       projectId,
       projectName,
       ownerId,
@@ -323,12 +407,23 @@ export async function provisionProject(
     await startProjectContainers(projectId)
     console.log(`[Provisioning] Step 3: OK - Containers started`)
 
-    // Step 4: Update status to "active" with host info
-    console.log(`[Provisioning] Step 4: Updating status -> active`)
-    const mysqlHost = `mysql-${projectId}`
-    const redisHost = `redis-${projectId}`
-    await updateProjectStatus(projectId, 'active', mysqlHost, redisHost)
-    console.log(`[Provisioning] Step 4: OK`)
+    // Step 4: Connect Drawer APIs to project network (hot connect, no restart needed)
+    console.log(`[Provisioning] Step 4: Connecting APIs to project network...`)
+    await connectApisToProjectNetwork(projectId)
+    console.log(`[Provisioning] Step 4: OK - APIs connected to ${projectId}-net`)
+
+    // Step 5: Update status to "active" with host info and credentials
+    console.log(`[Provisioning] Step 5: Updating status -> active`)
+    const mysqlHost = `${projectId}-mysql`
+    const redisHost = `${projectId}-redis`
+    await updateProjectStatus(projectId, 'active', {
+      mysqlHost,
+      redisHost,
+      mysqlUser: 'admin',
+      mysqlPassword,
+      redisPassword
+    })
+    console.log(`[Provisioning] Step 5: OK`)
 
     console.log(`[Provisioning] ========== SUCCESS for ${projectId} ==========`)
     console.log(`[Provisioning]   - MySQL: localhost:${mysqlPort}`)
@@ -348,6 +443,7 @@ export async function provisionProject(
 /**
  * Stops Docker containers for a project without removing volumes.
  * Used for soft delete (moving to trash) to free up RAM while preserving data.
+ * Also disconnects Drawer APIs from the project network.
  *
  * @param projectId - Project identifier
  * @returns Success status and optional error message
@@ -364,6 +460,12 @@ export async function stopProjectContainers(projectId: string): Promise<{ succes
     )
 
     console.log(`[StopContainers] Containers stopped for ${projectId}`)
+
+    // Disconnect APIs from project network when stopping
+    console.log(`[StopContainers] Disconnecting APIs from ${projectId} network...`)
+    await disconnectApisFromProjectNetwork(projectId)
+    console.log(`[StopContainers] APIs disconnected from ${projectId}-net`)
+
     return { success: true }
   } catch (error: any) {
     console.error(`[StopContainers] Error for ${projectId}:`, error)
@@ -375,6 +477,7 @@ export async function stopProjectContainers(projectId: string): Promise<{ succes
  * Restarts stopped Docker containers for a project.
  * Used when restoring a project from trash.
  * Waits for MySQL container to be ready before returning.
+ * Also reconnects Drawer APIs to the project network.
  *
  * @param projectId - Project identifier
  * @returns Success status and optional error message
@@ -400,13 +503,18 @@ export async function restartProjectContainers(projectId: string): Promise<{ suc
         )
         if (status.trim() === 'running') {
           console.log(`[RestartContainers] Containers restarted for ${projectId}`)
-          return { success: true }
+          break
         }
       } catch (e) {
         console.log(`[RestartContainers] Waiting... (${i + 1}/15)`)
       }
       await new Promise(resolve => setTimeout(resolve, 2000))
     }
+
+    // Reconnect APIs to project network after restart
+    console.log(`[RestartContainers] Reconnecting APIs to ${projectId} network...`)
+    await connectApisToProjectNetwork(projectId)
+    console.log(`[RestartContainers] APIs reconnected to ${projectId}-net`)
 
     return { success: true }
   } catch (error: any) {
@@ -427,9 +535,12 @@ export async function deprovisionProject(projectId: string): Promise<{ success: 
   try {
     const projectPath = join(PROJECTS_BASE_PATH, projectId)
 
-    console.log(`[Deprovisioning] Stopping containers for ${projectId}...`)
+    // Step 1: Disconnect APIs from project network
+    console.log(`[Deprovisioning] Disconnecting APIs from ${projectId} network...`)
+    await disconnectApisFromProjectNetwork(projectId)
 
-    // Stop and remove containers with volumes
+    // Step 2: Stop and remove containers with volumes
+    console.log(`[Deprovisioning] Stopping containers for ${projectId}...`)
     try {
       await execAsync(
         `cd ${projectPath} && docker compose -p ${projectId} --env-file .env -f docker-compose.project.dev.yml down -v`,
@@ -439,11 +550,11 @@ export async function deprovisionProject(projectId: string): Promise<{ success: 
       console.warn(`[Deprovisioning] Containers may already be stopped:`, e)
     }
 
-    // Delete project directory and all files
+    // Step 3: Delete project directory and all files
     console.log(`[Deprovisioning] Deleting files...`)
     await execAsync(`rm -rf ${projectPath}`, { timeout: 30000 })
 
-    // Update status in database
+    // Step 4: Update status in database
     await updateProjectStatus(projectId, 'deleted')
 
     console.log(`[Deprovisioning] Project ${projectId} deleted successfully!`)

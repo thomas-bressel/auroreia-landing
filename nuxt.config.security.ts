@@ -1,12 +1,17 @@
+// Detect environment for CSP configuration
+const isDev = process.env.NODE_ENV === 'development'
+
 export const securityConfig = {
   headers: {
-    contentSecurityPolicy: {
+    // Disable CSP in development to avoid false positives
+    contentSecurityPolicy: isDev ? false : {
       'default-src': ["'self'"],
       'script-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'style-src': ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
       'font-src': ["'self'", 'https://fonts.gstatic.com'],
       'img-src': ["'self'", 'data:', 'https:'],
       'connect-src': ["'self'"],
+      'frame-src': ["'self'", 'https://drawer.auroreia.fr'],
       'frame-ancestors': ["'none'"],
       'base-uri': ["'self'"],
       'form-action': ["'self'"]

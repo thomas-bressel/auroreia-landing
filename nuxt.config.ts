@@ -23,7 +23,10 @@ console.log('✅ baseURL:', baseURL)
 export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: true,
-  modules: ['@nuxt/image', 'nuxt-security'],
+  // nuxt-security désactivé en dev pour éviter les faux positifs CSP
+  modules: process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'staging' || process.env.APP_ENV === 'production'
+    ? ['@nuxt/image', 'nuxt-security']
+    : ['@nuxt/image'],
   // @ts-ignore - nuxt-security types
   security: securityConfig,
   app: {
