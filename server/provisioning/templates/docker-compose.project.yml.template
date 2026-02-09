@@ -40,23 +40,6 @@ services:
 # ===== CLIENT INTERFACES FOR DATABASE MANAGEMENT =====
 # =====================================================
 
-# Filebrowser - Interface de gestion des fichiers uploads
-  filebrowser-{{PROJECT_ID}}:
-    image: filebrowser/filebrowser:v2.31.2
-    container_name: {{PROJECT_ID}}-filebrowser
-    ports:
-      - "127.0.0.1:${FILEBROWSER_PORT:-8082}:80"
-    volumes:
-      - uploads-{{PROJECT_ID}}-data:/srv
-      - filebrowser-{{PROJECT_ID}}-config:/database
-      - filebrowser-{{PROJECT_ID}}-config:/config
-    environment:
-      - FB_NOAUTH=false
-    networks:
-      - {{PROJECT_ID}}-net
-    restart: unless-stopped
-
-
 # PHP myAdmin - Interface MySQL
   pma-{{PROJECT_ID}}:
     image: phpmyadmin:5.2.2
@@ -95,8 +78,6 @@ services:
 volumes:
   mysql-{{PROJECT_ID}}-data:
   redisinsight-{{PROJECT_ID}}-data:
-  uploads-{{PROJECT_ID}}-data:
-  filebrowser-{{PROJECT_ID}}-config:
 
 networks:
   {{PROJECT_ID}}-net:

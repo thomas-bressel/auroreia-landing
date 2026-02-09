@@ -45,7 +45,7 @@ jobs:
         key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
         port: ${{ secrets.VPS_PORT }}
         script: |
-          cd auroreia/landing/staging/
+          cd /var/www/applications/auroreia/landing/staging
 
           # Arrêter le conteneur staging
           docker compose -p auroreia-landing-staging down

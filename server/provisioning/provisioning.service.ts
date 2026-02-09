@@ -4,7 +4,7 @@
  * Handles the complete lifecycle of Drawer CIS project infrastructure:
  * - Creates project files from templates
  * - Starts/stops/restarts Docker containers
- * - Manages MySQL, Redis, phpMyAdmin, Redis Insight, and File Browser services
+ * - Manages MySQL, Redis, phpMyAdmin, and Redis Insight services
  *
  * Each project gets its own isolated Docker Compose stack with unique ports.
  *
@@ -42,7 +42,6 @@ const BASE_PORTS = {
   redis: 6380,
   pma: 8100,
   redisinsight: 5550,
-  filebrowser: 8200
 }
 
 /**
@@ -135,7 +134,7 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
   const redisPort = await getNextAvailablePort(BASE_PORTS.redis)
   const pmaPort = await getNextAvailablePort(BASE_PORTS.pma)
   const redisinsightPort = await getNextAvailablePort(BASE_PORTS.redisinsight)
-  const filebrowserPort = await getNextAvailablePort(BASE_PORTS.filebrowser)
+
 
   // Create project directories
   await mkdir(projectPath, { recursive: true })
@@ -156,7 +155,7 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
     REDIS_PORT: redisPort.toString(),
     PMA_PORT: pmaPort.toString(),
     REDISINSIGHT_PORT: redisinsightPort.toString(),
-    FILEBROWSER_PORT: filebrowserPort.toString(),
+
     ADMIN_UUID: adminUuid,
     ADMIN_USERNAME: config.adminUsername,
     ADMIN_EMAIL: config.ownerEmail,
