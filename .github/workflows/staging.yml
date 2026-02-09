@@ -54,7 +54,7 @@ jobs:
           docker compose -p auroreia-landing-staging pull
 
           # Relancer avec la nouvelle image
-          docker compose -p auroreia-landing-staging up -d
+          docker compose -p auroreia-landing-staging up -d --force-recreate
 
           # Vérifier le statut
           docker compose -p auroreia-landing-staging ps
