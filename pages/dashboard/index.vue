@@ -273,7 +273,7 @@ definePageMeta({
 const { owner, logout } = useAuth()
 const { projects, loading, error, fetchProjects, createProject, deleteProject, restoreProject, hardDeleteProject, provisionProject } = useProjects()
 
-const drawerUrl = 'https://drawer.auroreia.fr'
+const { drawerUrl } = useRuntimeConfig().public
 
 const showCreateModal = ref(false)
 const isCreating = ref(false)

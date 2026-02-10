@@ -30,14 +30,15 @@ ENV APP_ENV=${APP_ENV}
 ENV NODE_ENV=production
 ENV PORT=5000
 
+# Install Docker CLI for provisioning (creating project containers)
+RUN apk add --no-cache docker-cli docker-cli-compose
+
 WORKDIR /app
 
 COPY --from=builder /app/.output ./.output
 
-RUN mkdir -p /app/data && chown -R node:node /app/data
+RUN mkdir -p /app/data
 
 EXPOSE 5000
-
-USER node
 
 CMD ["node", ".output/server/index.mjs"]

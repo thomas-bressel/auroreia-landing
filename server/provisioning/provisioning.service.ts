@@ -27,8 +27,47 @@ import { getMySQLPool } from '../utils/mysql'
 
 const execAsync = promisify(exec)
 
+/**
+ * Environment-specific configuration for provisioning.
+ * Uses APP_ENV to determine which Drawer containers and network to connect to.
+ */
+const APP_ENV = process.env.APP_ENV || 'development'
+
+interface ProvisioningEnvConfig {
+  projectsBasePath: string
+  apiContainers: string[]
+  drawerNetworkName: string
+}
+
+const ENV_CONFIG: { development: ProvisioningEnvConfig; staging: ProvisioningEnvConfig; production: ProvisioningEnvConfig } = {
+  development: {
+    projectsBasePath: '/var/www/html/active/auroreia/projects',
+    apiContainers: ['drawer-nodejs-user-api-1', 'drawer-nodejs-content-api-1'],
+    drawerNetworkName: 'auroreia_auroreia-net',
+  },
+  staging: {
+    projectsBasePath: '/var/www/applications/auroreia/projects',
+    apiContainers: ['drawer-api-user-staging', 'drawer-api-content-staging'],
+    drawerNetworkName: 'drawer-core-net',
+  },
+  production: {
+    projectsBasePath: '/var/www/applications/auroreia/projects',
+    apiContainers: ['drawer-api-user-prod', 'drawer-api-content-prod'],
+    drawerNetworkName: 'drawer-core-net',
+  },
+}
+
+const envConfig: ProvisioningEnvConfig = (APP_ENV in ENV_CONFIG)
+  ? ENV_CONFIG[APP_ENV as keyof typeof ENV_CONFIG]
+  : ENV_CONFIG.development
+
+console.log(`[Provisioning] Environment: ${APP_ENV}`)
+console.log(`[Provisioning] Projects path: ${envConfig.projectsBasePath}`)
+console.log(`[Provisioning] Drawer containers: ${envConfig.apiContainers.join(', ')}`)
+console.log(`[Provisioning] Drawer network: ${envConfig.drawerNetworkName}`)
+
 /** Base path for all project directories (on host, outside container) */
-const PROJECTS_BASE_PATH = '/var/www/html/active/auroreia/projects'
+const PROJECTS_BASE_PATH = envConfig.projectsBasePath
 
 /** Path to template files for project generation */
 const TEMPLATES_PATH = join(process.cwd(), 'server', 'provisioning', 'templates')
@@ -156,6 +195,8 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
     PMA_PORT: pmaPort.toString(),
     REDISINSIGHT_PORT: redisinsightPort.toString(),
 
+    DRAWER_NETWORK_NAME: envConfig.drawerNetworkName,
+
     ADMIN_UUID: adminUuid,
     ADMIN_USERNAME: config.adminUsername,
     ADMIN_EMAIL: config.ownerEmail,
@@ -255,8 +296,8 @@ async function startProjectContainers(projectId: string): Promise<void> {
  */
 async function connectApisToProjectNetwork(projectId: string): Promise<void> {
   const projectNetworkName = `${projectId}-net`
-  const auroreaNetworkName = 'auroreia_auroreia-net'
-  const apiContainers = ['drawer-nodejs-user-api-1', 'drawer-nodejs-content-api-1']
+  const auroreaNetworkName = envConfig.drawerNetworkName
+  const apiContainers = envConfig.apiContainers
 
   for (const container of apiContainers) {
     // Connect to project network (for MySQL/Redis access)
@@ -294,7 +335,7 @@ async function connectApisToProjectNetwork(projectId: string): Promise<void> {
  */
 async function disconnectApisFromProjectNetwork(projectId: string): Promise<void> {
   const networkName = `${projectId}-net`
-  const apiContainers = ['drawer-nodejs-user-api-1', 'drawer-nodejs-content-api-1']
+  const apiContainers = envConfig.apiContainers
 
   for (const container of apiContainers) {
     try {
