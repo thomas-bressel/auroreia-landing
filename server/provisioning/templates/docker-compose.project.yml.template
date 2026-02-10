@@ -21,7 +21,6 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-adminpass}
     networks:
       - {{PROJECT_ID}}-net
-      - {{DRAWER_NETWORK_NAME}}
     restart: unless-stopped
 
 
@@ -34,7 +33,6 @@ services:
     command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
     networks:
       - {{PROJECT_ID}}-net
-      - {{DRAWER_NETWORK_NAME}}
     restart: unless-stopped
 
 
@@ -85,8 +83,3 @@ networks:
   {{PROJECT_ID}}-net:
     name: {{PROJECT_ID}}-net
     driver: bridge
-
-  # Connexion au réseau Drawer (externe, créé par docker-compose.core.yml)
-  {{DRAWER_NETWORK_NAME}}:
-    name: {{DRAWER_NETWORK_NAME}}
-    external: true

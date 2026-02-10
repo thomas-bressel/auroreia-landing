@@ -198,8 +198,6 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
     PMA_PORT: pmaPort.toString(),
     REDISINSIGHT_PORT: redisinsightPort.toString(),
 
-    DRAWER_NETWORK_NAME: envConfig.drawerNetworkName,
-
     ADMIN_UUID: adminUuid,
     ADMIN_USERNAME: config.adminUsername,
     ADMIN_EMAIL: config.ownerEmail,
