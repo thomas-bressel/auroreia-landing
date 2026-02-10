@@ -209,8 +209,8 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
   // Process each template file
   const templates = [
     { src: 'docker-compose.project.yml.template', dest: COMPOSE_FILENAME },
-    { src: '.env.template', dest: '.env' },
-    { src: '.project.json.template', dest: '.project.json' },
+    { src: 'env.template', dest: '.env' },
+    { src: 'project.json.template', dest: '.project.json' },
     { src: '01-create-databases.sql.template', dest: 'mysql-init/01-create-databases.sql' },
     { src: '02-init-users-db.sql.template', dest: 'mysql-init/02-init-users-db.sql' },
     { src: '03-init-content-db.sql.template', dest: 'mysql-init/03-init-content-db.sql' }

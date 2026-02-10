@@ -24,7 +24,6 @@ dist
 .env
 .env.*
 !.env.example
-!server/provisioning/templates/.env.template
 
 # Testing
 coverage
@@ -42,7 +41,6 @@ coverage
 # Docker
 Dockerfile*
 docker-compose*
-!server/provisioning/templates/docker-compose.project.yml.template
 .dockerignore
 
 # CI/CD
