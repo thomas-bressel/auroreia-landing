@@ -181,6 +181,10 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
   // Create project directories
   await mkdir(projectPath, { recursive: true })
   await mkdir(mysqlInitPath, { recursive: true })
+  await mkdir(join(projectPath, 'uploads', 'content', 'articles'), { recursive: true })
+  await mkdir(join(projectPath, 'uploads', 'content', 'documents'), { recursive: true })
+  await mkdir(join(projectPath, 'uploads', 'content', 'folders'), { recursive: true })
+  await mkdir(join(projectPath, 'uploads', 'users', 'avatars'), { recursive: true })
 
   // Prepare template replacements
   const adminUuid = randomUUID()
