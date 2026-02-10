@@ -37,6 +37,9 @@ WORKDIR /app
 
 COPY --from=builder /app/.output ./.output
 
+# Copy provisioning templates (not included in Nuxt build output)
+COPY --from=builder /app/server/provisioning/templates ./server/provisioning/templates
+
 RUN mkdir -p /app/data
 
 EXPOSE 5000
