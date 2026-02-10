@@ -10,7 +10,7 @@
  *
  * Directory structure per project:
  * /var/www/html/active/auroreia/projects/{projectId}/
- * ├── docker-compose.project.dev.yml
+ * ├── docker-compose.project.{dev|staging|prod}.yml
  * ├── .env
  * ├── .project.json
  * └── mysql-init/
@@ -71,6 +71,9 @@ const PROJECTS_BASE_PATH = envConfig.projectsBasePath
 
 /** Path to template files for project generation */
 const TEMPLATES_PATH = join(process.cwd(), 'server', 'provisioning', 'templates')
+
+/** Docker compose filename per environment (dev, staging, production) */
+const COMPOSE_FILENAME = `docker-compose.project.${APP_ENV === 'production' ? 'prod' : APP_ENV === 'staging' ? 'staging' : 'dev'}.yml`
 
 /**
  * Base ports for services. Each new project gets ports offset by project count.
@@ -205,7 +208,7 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
 
   // Process each template file
   const templates = [
-    { src: 'docker-compose.project.yml.template', dest: 'docker-compose.project.dev.yml' },
+    { src: 'docker-compose.project.yml.template', dest: COMPOSE_FILENAME },
     { src: '.env.template', dest: '.env' },
     { src: '.project.json.template', dest: '.project.json' },
     { src: '01-create-databases.sql.template', dest: 'mysql-init/01-create-databases.sql' },
@@ -247,7 +250,7 @@ async function startProjectContainers(projectId: string): Promise<void> {
     // Note: --env-file doesn't work well from inside a container, so we source the file
     // Using /bin/sh because Alpine doesn't have bash (. instead of source)
     const { stdout, stderr } = await execAsync(
-      `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f docker-compose.project.dev.yml up -d`,
+      `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f ${COMPOSE_FILENAME} up -d`,
       { timeout: 120000, shell: '/bin/sh' }
     )
     console.log(`[Provisioning] docker-compose stdout: ${stdout}`)
@@ -495,7 +498,7 @@ export async function stopProjectContainers(projectId: string): Promise<{ succes
     console.log(`[StopContainers] Stopping containers for ${projectId}...`)
 
     await execAsync(
-      `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f docker-compose.project.dev.yml stop`,
+      `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f ${COMPOSE_FILENAME} stop`,
       { timeout: 60000, shell: '/bin/sh' }
     )
 
@@ -529,7 +532,7 @@ export async function restartProjectContainers(projectId: string): Promise<{ suc
     console.log(`[RestartContainers] Restarting containers for ${projectId}...`)
 
     await execAsync(
-      `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f docker-compose.project.dev.yml start`,
+      `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f ${COMPOSE_FILENAME} start`,
       { timeout: 120000, shell: '/bin/sh' }
     )
 
@@ -583,7 +586,7 @@ export async function deprovisionProject(projectId: string): Promise<{ success: 
     console.log(`[Deprovisioning] Stopping containers for ${projectId}...`)
     try {
       await execAsync(
-        `cd ${projectPath} && docker compose -p ${projectId} --env-file .env -f docker-compose.project.dev.yml down -v`,
+        `cd ${projectPath} && docker compose -p ${projectId} --env-file .env -f ${COMPOSE_FILENAME} down -v`,
         { timeout: 60000 }
       )
     } catch (e) {
