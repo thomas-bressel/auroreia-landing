@@ -31,7 +31,7 @@ const execAsync = promisify(exec)
  * Environment-specific configuration for provisioning.
  * Uses APP_ENV to determine which Drawer containers and network to connect to.
  */
-const APP_ENV = process.env.APP_ENV || 'staging'
+const APP_ENV = process.env.APP_ENV || 'development'
 
 interface ProvisioningEnvConfig {
   projectsBasePath: string
