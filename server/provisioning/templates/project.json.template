@@ -1,0 +1,26 @@
+{
+  "id": "{{PROJECT_ID}}",
+  "display_name": "{{PROJECT_NAME}}",
+  "owner_id": "{{OWNER_ID}}",
+  "created_at": "{{CREATED_AT}}",
+  "status": "active",
+  "plan": "free",
+  "databases": {
+    "mysql": {
+      "host": "mysql-{{PROJECT_ID}}",
+      "port": 3306,
+      "databases": [
+        "{{PROJECT_ID}}_users",
+        "{{PROJECT_ID}}_content"
+      ]
+    },
+    "redis": {
+      "host": "redis-{{PROJECT_ID}}",
+      "port": 6379
+    }
+  },
+  "api_endpoints": {
+    "user_api": "http://nodejs-user-api:5002",
+    "content_api": "http://nodejs-content-api:5001"
+  }
+}

@@ -20,10 +20,22 @@ console.log('✅ isStaging:', isStaging)
 console.log('✅ isProduction:', isProduction)
 console.log('✅ baseURL:', baseURL)
 
+// URL Drawer selon l'environnement
+const drawerUrl = isStaging ? 'https://staging.drawer.auroreia.fr' : 'https://drawer.auroreia.fr'
+
 export default defineNuxtConfig({
   devtools: { enabled: true },
   ssr: true,
-  modules: ['@nuxt/image', 'nuxt-security'],
+
+  runtimeConfig: {
+    public: {
+      drawerUrl,
+    }
+  },
+  // nuxt-security désactivé en dev pour éviter les faux positifs CSP
+  modules: process.env.NODE_ENV === 'production' || process.env.APP_ENV === 'staging' || process.env.APP_ENV === 'production'
+    ? ['@nuxt/image', 'nuxt-security']
+    : ['@nuxt/image'],
   // @ts-ignore - nuxt-security types
   security: securityConfig,
   app: {

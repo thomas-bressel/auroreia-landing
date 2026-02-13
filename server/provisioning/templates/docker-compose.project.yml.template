@@ -1,0 +1,85 @@
+services:
+
+# ==========================================
+# ===== PROJECT: {{PROJECT_ID}} =====
+# Display name: {{PROJECT_NAME}}
+# ==========================================
+
+# MySQL server - Base de données du projet (users + content)
+  mysql-{{PROJECT_ID}}:
+    image: mysql:9.3.0
+    container_name: {{PROJECT_ID}}-mysql
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-{{PROJECT_ID}}-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-{{PROJECT_ID}}_users}
+      MYSQL_USER: ${MYSQL_USER:-admin}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-adminpass}
+    networks:
+      - {{PROJECT_ID}}-net
+    restart: unless-stopped
+
+
+# Redis server - Cache du projet
+  redis-{{PROJECT_ID}}:
+    image: redis:8.0.2
+    container_name: {{PROJECT_ID}}-redis
+    ports:
+     - "${REDIS_PORT:-6379}:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    networks:
+      - {{PROJECT_ID}}-net
+    restart: unless-stopped
+
+
+# =====================================================
+# ===== CLIENT INTERFACES FOR DATABASE MANAGEMENT =====
+# =====================================================
+
+# PHP myAdmin - Interface MySQL
+  pma-{{PROJECT_ID}}:
+    image: phpmyadmin:5.2.2
+    container_name: {{PROJECT_ID}}-pma
+    ports:
+      - "127.0.0.1:${PHPMYADMIN_WEB_PORT:-8090}:80"
+    environment:
+      PMA_HOST: ${MYSQL_SERVICE_NAME:-mysql-{{PROJECT_ID}}}
+      PMA_PORT: ${MYSQL_INTERNAL_PORT:-3306}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      PMA_ABSOLUTE_URI: ${PHPMYADMIN_WEB_URL:-http://localhost:8090/}
+    depends_on:
+      - mysql-{{PROJECT_ID}}
+    networks:
+      - {{PROJECT_ID}}-net
+    restart: unless-stopped
+
+
+# redis-insight - Interface Redis
+  insight-{{PROJECT_ID}}:
+    image: redis/redisinsight:2.70
+    container_name: {{PROJECT_ID}}-insight
+    ports:
+      - "127.0.0.1:${REDISINSIGHT_PORT:-5540}:5540"
+    volumes:
+      - redisinsight-{{PROJECT_ID}}-data:/data
+    environment:
+      RITRUSTEDORIGINS: ${REDISINSIGHT_URL:-http://localhost:5540}
+    depends_on:
+      - redis-{{PROJECT_ID}}
+    networks:
+      - {{PROJECT_ID}}-net
+    restart: unless-stopped
+
+
+volumes:
+  mysql-{{PROJECT_ID}}-data:
+  redisinsight-{{PROJECT_ID}}-data:
+
+networks:
+  {{PROJECT_ID}}-net:
+    name: {{PROJECT_ID}}-net
+    driver: bridge

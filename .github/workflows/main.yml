@@ -47,19 +47,22 @@ jobs:
         key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
         port: ${{ secrets.VPS_PORT }}
         script: |
-          cd auroreia/landing/production/
+          cd /var/www/applications/auroreia/landing/production
 
           # Arrêter le conteneur production
-          docker compose -p auroreia-landing-prod down
+          docker compose -p auroreia-landing-production down
 
           # Récupérer la nouvelle image
-          docker compose -p auroreia-landing-prod pull
+          docker compose -p auroreia-landing-production pull
 
           # Relancer avec la nouvelle image
-          docker compose -p auroreia-landing-prod up -d
+          docker compose -p auroreia-landing-production up -d --force-recreate
 
           # Vérifier le statut
-          docker compose -p auroreia-landing-prod ps
+          docker compose -p auroreia-landing-production ps
+
+          # Afficher les logs pour vérifier le démarrage
+          docker compose -p auroreia-landing-production logs --tail 20
 
           # Nettoyer les anciennes images non utilisées
           docker image prune -f

@@ -1,0 +1,146 @@
+-- ==========================================
+-- Initialisation de la structure de la base USERS
+-- Project: {{PROJECT_ID}} ({{PROJECT_NAME}})
+-- ==========================================
+
+USE `{{PROJECT_ID}}_users`;
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+-- Structure de la table `auth_provider`
+CREATE TABLE `auth_provider` (
+  `id_auth_provider` int NOT NULL AUTO_INCREMENT,
+  `id_user` int NOT NULL,
+  `provider_name` varchar(50) NOT NULL,
+  `provider_user_id` varchar(255) NOT NULL,
+  `provider_email` varchar(255) NOT NULL,
+  `access_token` varchar(2048) DEFAULT NULL,
+  `refresh_token` varchar(2048) DEFAULT NULL,
+  `token_expires_at` datetime DEFAULT NULL,
+  `provider_data` json DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_auth_provider`),
+  UNIQUE KEY `provider_unique` (`provider_name`,`provider_user_id`),
+  KEY `id_user` (`id_user`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Structure de la table `membership`
+CREATE TABLE `membership` (
+  `id_membership` int NOT NULL AUTO_INCREMENT,
+  `label` varchar(100) NOT NULL,
+  `description` text,
+  `price` decimal(10,2) DEFAULT '0.00',
+  `duration_days` int DEFAULT NULL,
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `tier_level` int NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id_membership`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Structure de la table `permission`
+CREATE TABLE `permission` (
+  `id_permission` int NOT NULL AUTO_INCREMENT,
+  `code` varchar(35) NOT NULL,
+  `name` varchar(50) NOT NULL,
+  `description` text,
+  `category` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id_permission`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Structure de la table `role`
+CREATE TABLE `role` (
+  `id_role` int NOT NULL AUTO_INCREMENT,
+  `role_name` varchar(30) DEFAULT NULL,
+  `role_slug` varchar(10) DEFAULT NULL,
+  `role_color` varchar(30) NOT NULL DEFAULT 'black',
+  `canAccess` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id_role`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Structure de la table `role_permission`
+CREATE TABLE `role_permission` (
+  `id_role` int NOT NULL,
+  `id_permission` int NOT NULL,
+  PRIMARY KEY (`id_role`,`id_permission`),
+  KEY `id_permission` (`id_permission`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Structure de la table `users`
+CREATE TABLE `users` (
+  `id_user` int NOT NULL AUTO_INCREMENT,
+  `uuid` varchar(36) NOT NULL,
+  `nickname` varchar(25) NOT NULL,
+  `email` varchar(50) NOT NULL,
+  `hash_password` varchar(256) NOT NULL,
+  `firstname` varchar(25) DEFAULT NULL,
+  `lastname` varchar(50) DEFAULT NULL,
+  `registration_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_login` datetime DEFAULT CURRENT_TIMESTAMP,
+  `is_activated` tinyint(1) NOT NULL DEFAULT '0',
+  `id_role` int NOT NULL,
+  `avatar` varchar(127) NOT NULL DEFAULT 'default-avatar.webp',
+  `updated_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id_user`),
+  KEY `id_role` (`id_role`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Structure de la table `user_membership`
+CREATE TABLE `user_membership` (
+  `id_user_membership` int NOT NULL AUTO_INCREMENT,
+  `id_user` int NOT NULL,
+  `id_membership` int NOT NULL,
+  `start_date` datetime DEFAULT CURRENT_TIMESTAMP,
+  `end_date` datetime DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  PRIMARY KEY (`id_user_membership`),
+  UNIQUE KEY `unique_user_membership` (`id_user`),
+  KEY `id_membership` (`id_membership`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Contraintes de clés étrangères
+ALTER TABLE `auth_provider`
+  ADD CONSTRAINT `auth_provider_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `users` (`id_user`) ON DELETE CASCADE;
+
+ALTER TABLE `role_permission`
+  ADD CONSTRAINT `role_permission_ibfk_1` FOREIGN KEY (`id_role`) REFERENCES `role` (`id_role`),
+  ADD CONSTRAINT `role_permission_ibfk_2` FOREIGN KEY (`id_permission`) REFERENCES `permission` (`id_permission`);
+
+ALTER TABLE `users`
+  ADD CONSTRAINT `users_ibfk_1` FOREIGN KEY (`id_role`) REFERENCES `role` (`id_role`);
+
+ALTER TABLE `user_membership`
+  ADD CONSTRAINT `user_membership_ibfk_1` FOREIGN KEY (`id_user`) REFERENCES `users` (`id_user`),
+  ADD CONSTRAINT `user_membership_ibfk_2` FOREIGN KEY (`id_membership`) REFERENCES `membership` (`id_membership`);
+
+-- ==========================================
+-- DONNÉES INITIALES
+-- ==========================================
+
+-- Rôles par défaut
+INSERT INTO `role` (`id_role`, `role_name`, `role_slug`, `role_color`, `canAccess`) VALUES
+(1, 'Administrateur', 'admin', '#e74c3c', 1),
+(2, 'Éditeur', 'editor', '#3498db', 1),
+(3, 'Utilisateur', 'user', '#95a5a6', 0);
+
+-- Permissions par défaut
+INSERT INTO `permission` (`id_permission`, `code`, `name`, `description`, `category`) VALUES
+(1, 'MANAGE_USERS', 'Gérer les utilisateurs', 'Peut créer, modifier et supprimer des utilisateurs', 'users'),
+(2, 'MANAGE_CONTENT', 'Gérer le contenu', 'Peut créer, modifier et supprimer du contenu', 'content'),
+(3, 'MANAGE_ROLES', 'Gérer les rôles', 'Peut créer, modifier et supprimer des rôles', 'users'),
+(4, 'VIEW_ANALYTICS', 'Voir les statistiques', 'Peut consulter les statistiques', 'analytics');
+
+-- Permissions du rôle Admin
+INSERT INTO `role_permission` (`id_role`, `id_permission`) VALUES
+(1, 1), (1, 2), (1, 3), (1, 4);
+
+-- Permissions du rôle Éditeur
+INSERT INTO `role_permission` (`id_role`, `id_permission`) VALUES
+(2, 2);
+
+-- Utilisateur admin initial (créé par le provisioning)
+INSERT INTO `users` (`uuid`, `nickname`, `email`, `hash_password`, `is_activated`, `id_role`) VALUES
+('{{ADMIN_UUID}}', '{{ADMIN_USERNAME}}', '{{ADMIN_EMAIL}}', '{{ADMIN_PASSWORD_HASH}}', 1, 1);
+
+COMMIT;

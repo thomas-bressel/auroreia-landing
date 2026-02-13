@@ -1,0 +1,284 @@
+-- ==========================================
+-- Initialisation de la structure de la base CONTENT
+-- Project: {{PROJECT_ID}} ({{PROJECT_NAME}})
+-- ==========================================
+
+USE `{{PROJECT_ID}}_content`;
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+CREATE TABLE `articles` (
+  `id_articles` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(128) DEFAULT NULL,
+  `description` text,
+  `creation_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `cover` varchar(128) DEFAULT NULL,
+  `is_display` tinyint(1) NOT NULL DEFAULT '0',
+  `id_author` int NOT NULL,
+  `id_categories` int NOT NULL,
+  `is_deleted` tinyint(1) NOT NULL DEFAULT '0',
+  `slug` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_articles`),
+  KEY `id_author` (`id_author`),
+  KEY `id_categories` (`id_categories`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `articles_files` (
+  `id_articles` int NOT NULL,
+  `id_files` int NOT NULL,
+  PRIMARY KEY (`id_articles`,`id_files`),
+  KEY `fk_articles_files_file` (`id_files`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `article_tags` (
+  `id_articles` int NOT NULL,
+  `id_tags` int NOT NULL,
+  PRIMARY KEY (`id_articles`,`id_tags`),
+  KEY `id_tags` (`id_tags`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `author` (
+  `id_author` int NOT NULL AUTO_INCREMENT,
+  `user_uuid` varchar(50) NOT NULL,
+  `author_nickname` varchar(50) NOT NULL,
+  PRIMARY KEY (`id_author`),
+  UNIQUE KEY `user_uuid` (`user_uuid`),
+  UNIQUE KEY `author_nickname` (`author_nickname`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `categories` (
+  `id_categories` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) DEFAULT NULL,
+  PRIMARY KEY (`id_categories`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `certificates` (
+  `id_certificates` int NOT NULL AUTO_INCREMENT,
+  `creation_date` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `note` tinyint DEFAULT NULL,
+  `is_display` tinyint(1) NOT NULL DEFAULT '0',
+  `id_articles` int NOT NULL,
+  PRIMARY KEY (`id_certificates`),
+  KEY `id_articles` (`id_articles`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `choices` (
+  `id_choices` int NOT NULL AUTO_INCREMENT,
+  `choice_name` varchar(127) NOT NULL,
+  `is_answer` tinyint(1) NOT NULL DEFAULT '0',
+  `is_display` tinyint(1) NOT NULL DEFAULT '0',
+  `id_questions` int NOT NULL,
+  PRIMARY KEY (`id_choices`),
+  KEY `id_questions` (`id_questions`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `column_images` (
+  `id_image` int NOT NULL AUTO_INCREMENT,
+  `id_column` int NOT NULL,
+  `image_filename` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_image`),
+  KEY `id_column` (`id_column`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `column_texts` (
+  `id_text` int NOT NULL AUTO_INCREMENT,
+  `id_column` int NOT NULL,
+  `text_content` text NOT NULL,
+  PRIMARY KEY (`id_text`),
+  KEY `id_column` (`id_column`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `column_titles` (
+  `id_title` int NOT NULL AUTO_INCREMENT,
+  `id_column` int NOT NULL,
+  `title_text` varchar(255) NOT NULL,
+  PRIMARY KEY (`id_title`),
+  KEY `id_column` (`id_column`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `contents` (
+  `id_contents` int NOT NULL AUTO_INCREMENT,
+  `page` tinyint NOT NULL,
+  `id_articles` int NOT NULL,
+  `id_templates` int NOT NULL,
+  `order` int NOT NULL,
+  PRIMARY KEY (`id_contents`),
+  KEY `id_articles` (`id_articles`),
+  KEY `id_templates` (`id_templates`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `content_columns` (
+  `id_column` int NOT NULL AUTO_INCREMENT,
+  `id_contents` int NOT NULL,
+  `position` tinyint NOT NULL,
+  PRIMARY KEY (`id_column`),
+  KEY `id_contents` (`id_contents`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `files` (
+  `id_files` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(255) DEFAULT NULL,
+  `is_display` tinyint(1) NOT NULL DEFAULT '0',
+  `level_required` int NOT NULL DEFAULT '1',
+  `id_label` int NOT NULL,
+  `description` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id_files`),
+  KEY `id_label` (`id_label`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `folders` (
+  `id_folder` int NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) DEFAULT NULL,
+  `description` varchar(512) DEFAULT NULL,
+  `link` varchar(127) NOT NULL,
+  `icon` varchar(50) DEFAULT NULL,
+  `is_display` tinyint(1) NOT NULL DEFAULT '0',
+  `level_required` int NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id_folder`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `folders_files` (
+  `id_folder` int NOT NULL,
+  `id_files` int NOT NULL,
+  PRIMARY KEY (`id_folder`,`id_files`),
+  KEY `id_files` (`id_files`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `labels` (
+  `id_label` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(127) DEFAULT NULL,
+  PRIMARY KEY (`id_label`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `menu` (
+  `id_menu` int NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) DEFAULT NULL,
+  `link` varchar(50) DEFAULT NULL,
+  `place` tinyint DEFAULT NULL,
+  `is_display` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id_menu`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `questions` (
+  `id_questions` int NOT NULL AUTO_INCREMENT,
+  `text` varchar(256) DEFAULT NULL,
+  `is_multiple` tinyint(1) NOT NULL DEFAULT '0',
+  `id_surveys` int NOT NULL,
+  PRIMARY KEY (`id_questions`),
+  KEY `id_surveys` (`id_surveys`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `surveys` (
+  `id_surveys` int NOT NULL AUTO_INCREMENT,
+  `is_display` tinyint(1) NOT NULL DEFAULT '0',
+  `id_type` int NOT NULL,
+  `id_articles` int NOT NULL,
+  PRIMARY KEY (`id_surveys`),
+  UNIQUE KEY `id_articles` (`id_articles`),
+  KEY `id_type` (`id_type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `tags` (
+  `id_tags` int NOT NULL AUTO_INCREMENT,
+  `color` varchar(15) DEFAULT NULL,
+  `background_color` varchar(25) DEFAULT NULL,
+  `border_color` varchar(25) DEFAULT NULL,
+  `label` varchar(50) DEFAULT NULL,
+  `is_display` tinyint(1) NOT NULL DEFAULT '1',
+  PRIMARY KEY (`id_tags`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `templates` (
+  `id_templates` int NOT NULL AUTO_INCREMENT,
+  `template_name` varchar(50) DEFAULT NULL,
+  `template_image` varchar(127) NOT NULL,
+  `is_title_left` tinyint(1) NOT NULL DEFAULT '0',
+  `is_title_center` tinyint(1) NOT NULL DEFAULT '0',
+  `is_title_right` tinyint(1) NOT NULL DEFAULT '0',
+  `is_text_left` tinyint(1) NOT NULL DEFAULT '0',
+  `is_text_center` tinyint(1) NOT NULL DEFAULT '0',
+  `is_text_right` tinyint(1) NOT NULL DEFAULT '0',
+  `is_image_left` tinyint(1) NOT NULL DEFAULT '0',
+  `is_image_center` tinyint(1) NOT NULL DEFAULT '0',
+  `is_image_right` tinyint(1) NOT NULL DEFAULT '0',
+  `is_display` tinyint(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id_templates`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `type` (
+  `id_type` int NOT NULL AUTO_INCREMENT,
+  `type_name` varchar(50) NOT NULL,
+  PRIMARY KEY (`id_type`),
+  UNIQUE KEY `type_name` (`type_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Contraintes
+ALTER TABLE `articles`
+  ADD CONSTRAINT `articles_ibfk_1` FOREIGN KEY (`id_author`) REFERENCES `author` (`id_author`),
+  ADD CONSTRAINT `articles_ibfk_2` FOREIGN KEY (`id_categories`) REFERENCES `categories` (`id_categories`);
+
+ALTER TABLE `articles_files`
+  ADD CONSTRAINT `fk_articles_files_article` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_articles_files_file` FOREIGN KEY (`id_files`) REFERENCES `files` (`id_files`) ON DELETE CASCADE;
+
+ALTER TABLE `article_tags`
+  ADD CONSTRAINT `article_tags_ibfk_1` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`),
+  ADD CONSTRAINT `article_tags_ibfk_2` FOREIGN KEY (`id_tags`) REFERENCES `tags` (`id_tags`);
+
+ALTER TABLE `certificates`
+  ADD CONSTRAINT `certificates_ibfk_1` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`);
+
+ALTER TABLE `choices`
+  ADD CONSTRAINT `choices_ibfk_1` FOREIGN KEY (`id_questions`) REFERENCES `questions` (`id_questions`);
+
+ALTER TABLE `column_images`
+  ADD CONSTRAINT `column_images_ibfk_1` FOREIGN KEY (`id_column`) REFERENCES `content_columns` (`id_column`) ON DELETE CASCADE;
+
+ALTER TABLE `column_texts`
+  ADD CONSTRAINT `column_texts_ibfk_1` FOREIGN KEY (`id_column`) REFERENCES `content_columns` (`id_column`) ON DELETE CASCADE;
+
+ALTER TABLE `column_titles`
+  ADD CONSTRAINT `column_titles_ibfk_1` FOREIGN KEY (`id_column`) REFERENCES `content_columns` (`id_column`) ON DELETE CASCADE;
+
+ALTER TABLE `contents`
+  ADD CONSTRAINT `contents_ibfk_4` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`),
+  ADD CONSTRAINT `contents_ibfk_5` FOREIGN KEY (`id_templates`) REFERENCES `templates` (`id_templates`);
+
+ALTER TABLE `content_columns`
+  ADD CONSTRAINT `content_columns_ibfk_1` FOREIGN KEY (`id_contents`) REFERENCES `contents` (`id_contents`) ON DELETE CASCADE;
+
+ALTER TABLE `files`
+  ADD CONSTRAINT `files_ibfk_1` FOREIGN KEY (`id_label`) REFERENCES `labels` (`id_label`);
+
+ALTER TABLE `folders_files`
+  ADD CONSTRAINT `folders_files_ibfk_1` FOREIGN KEY (`id_folder`) REFERENCES `folders` (`id_folder`),
+  ADD CONSTRAINT `folders_files_ibfk_2` FOREIGN KEY (`id_files`) REFERENCES `files` (`id_files`);
+
+ALTER TABLE `questions`
+  ADD CONSTRAINT `questions_ibfk_1` FOREIGN KEY (`id_surveys`) REFERENCES `surveys` (`id_surveys`);
+
+ALTER TABLE `surveys`
+  ADD CONSTRAINT `surveys_ibfk_1` FOREIGN KEY (`id_type`) REFERENCES `type` (`id_type`),
+  ADD CONSTRAINT `surveys_ibfk_2` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`);
+
+-- ==========================================
+-- DONNÉES INITIALES
+-- ==========================================
+
+-- Catégorie par défaut
+INSERT INTO `categories` (`id_categories`, `name`) VALUES (1, 'Non classé');
+
+-- Label par défaut pour les fichiers
+INSERT INTO `labels` (`id_label`, `name`) VALUES (1, 'Document');
+
+-- Types de surveys
+INSERT INTO `type` (`id_type`, `type_name`) VALUES (1, 'Quiz'), (2, 'Sondage');
+
+-- Auteur initial (lié à l'admin)
+INSERT INTO `author` (`id_author`, `user_uuid`, `author_nickname`) VALUES
+(1, '{{ADMIN_UUID}}', '{{ADMIN_USERNAME}}');
+
+COMMIT;

@@ -82,7 +82,7 @@ const messageType = ref<'success' | 'error'>('success')
 const handleSubmit = async () => {
   if (!email.value) return
 
-  // Protection honeypot : si le champ est rempli, c'est un bot
+  // Honeypot protection: if field is filled, it's a bot
   if (honeypot.value) {
     console.warn('Bot detected via honeypot')
     return
@@ -92,7 +92,7 @@ const handleSubmit = async () => {
   message.value = ''
 
   try {
-    // Utiliser useCsrfFetch pour inclure automatiquement le token CSRF
+    // Use useCsrfFetch to automatically include CSRF token
     const { data, error } = await useCsrfFetch<NewsletterResponse>('/api/newsletter', {
       method: 'POST',
       body: {
@@ -112,7 +112,7 @@ const handleSubmit = async () => {
     if (response?.success) {
       messageType.value = 'success'
       message.value = response.message || 'Inscription réussie !'
-      email.value = '' // Réinitialiser le formulaire
+      email.value = '' // Reset form
     } else {
       messageType.value = 'error'
       message.value = response?.error || 'Une erreur est survenue'
