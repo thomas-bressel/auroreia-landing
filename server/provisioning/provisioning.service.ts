@@ -10,7 +10,7 @@
  *
  * Directory structure per project:
  * /var/www/html/active/auroreia/projects/{projectId}/
- * ├── docker-compose.project.{dev|staging|prod}.yml
+ * ├── docker-compose.project.yml
  * ├── .env
  * ├── .project.json
  * └── mysql-init/
@@ -72,8 +72,8 @@ const PROJECTS_BASE_PATH = envConfig.projectsBasePath
 /** Path to template files for project generation */
 const TEMPLATES_PATH = join(process.cwd(), 'server', 'provisioning', 'templates')
 
-/** Docker compose filename per environment (dev, staging, production) */
-const COMPOSE_FILENAME = `docker-compose.project.${APP_ENV === 'production' ? 'prod' : APP_ENV === 'staging' ? 'staging' : 'dev'}.yml`
+/** Docker compose filename (generic, shared across environments) */
+const COMPOSE_FILENAME = 'docker-compose.project.yml'
 
 /**
  * Base ports for services. Each new project gets ports offset by project count.
