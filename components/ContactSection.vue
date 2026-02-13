@@ -93,7 +93,7 @@ const handleSubmit = async () => {
 
   try {
     // Use useCsrfFetch to automatically include CSRF token
-    const { data, error } = await useCsrfFetch<NewsletterResponse>('/api/newsletter', {
+    const { data, error } = await useFetch<NewsletterResponse>('/api/newsletter', {
       method: 'POST',
       body: {
         email: email.value,
