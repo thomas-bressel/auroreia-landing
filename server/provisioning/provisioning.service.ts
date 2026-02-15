@@ -47,12 +47,12 @@ const ENV_CONFIG: { development: ProvisioningEnvConfig; staging: ProvisioningEnv
   },
   staging: {
     projectsBasePath: '/var/www/applications/auroreia/projects',
-    apiContainers: ['drawer-api-user-staging', 'drawer-api-content-staging'],
+    apiContainers: ['drawer-api-user-staging', 'drawer-api-content-staging', 'drawer-api-user-prod', 'drawer-api-content-prod'],
     drawerNetworkName: 'drawer-core-net',
   },
   production: {
     projectsBasePath: '/var/www/applications/auroreia/projects',
-    apiContainers: ['drawer-api-user-prod', 'drawer-api-content-prod'],
+    apiContainers: ['drawer-api-user-prod', 'drawer-api-content-prod', 'drawer-api-user-staging', 'drawer-api-content-staging'],
     drawerNetworkName: 'drawer-core-net',
   },
 }
