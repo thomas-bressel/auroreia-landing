@@ -110,7 +110,10 @@ function generatePassword(length: number = 16): string {
   const bytes = randomBytes(length)
   let password = ''
   for (let i = 0; i < length; i++) {
-    password += chars[bytes[i] % chars.length]
+    const byte = bytes[i]
+    if (typeof byte === 'number') {
+      password += chars[byte % chars.length]
+    }
   }
   return password
 }
