@@ -36,24 +36,24 @@ const APP_ENV = process.env.APP_ENV || 'development'
 interface ProvisioningEnvConfig {
   projectsBasePath: string
   apiContainers: string[]
-  drawerNetworkName: string
+  auroreaNetworkName: string
 }
 
 const ENV_CONFIG: { development: ProvisioningEnvConfig; staging: ProvisioningEnvConfig; production: ProvisioningEnvConfig } = {
   development: {
     projectsBasePath: '/var/www/html/active/auroreia/projects',
     apiContainers: ['drawer-nodejs-user-api-1', 'drawer-nodejs-content-api-1'],
-    drawerNetworkName: 'auroreia_auroreia-net',
+    auroreaNetworkName: 'auroreia_auroreia-net',
   },
   staging: {
     projectsBasePath: '/var/www/applications/auroreia/projects',
     apiContainers: ['drawer-api-user-staging', 'drawer-api-content-staging', 'drawer-api-user-prod', 'drawer-api-content-prod'],
-    drawerNetworkName: 'drawer-core-net',
+    auroreaNetworkName: 'auroreia-net-staging',
   },
   production: {
     projectsBasePath: '/var/www/applications/auroreia/projects',
     apiContainers: ['drawer-api-user-prod', 'drawer-api-content-prod', 'drawer-api-user-staging', 'drawer-api-content-staging'],
-    drawerNetworkName: 'drawer-core-net',
+    auroreaNetworkName: 'auroreia-net-prod',
   },
 }
 
@@ -64,7 +64,7 @@ const envConfig: ProvisioningEnvConfig = (APP_ENV in ENV_CONFIG)
 console.log(`[Provisioning] Environment: ${APP_ENV}`)
 console.log(`[Provisioning] Projects path: ${envConfig.projectsBasePath}`)
 console.log(`[Provisioning] Drawer containers: ${envConfig.apiContainers.join(', ')}`)
-console.log(`[Provisioning] Drawer network: ${envConfig.drawerNetworkName}`)
+console.log(`[Provisioning] Auroreia network: ${envConfig.auroreaNetworkName}`)
 
 /** Base path for all project directories (on host, outside container) */
 const PROJECTS_BASE_PATH = envConfig.projectsBasePath
@@ -304,7 +304,7 @@ async function startProjectContainers(projectId: string): Promise<void> {
  */
 async function connectApisToProjectNetwork(projectId: string): Promise<void> {
   const projectNetworkName = `${projectId}-net`
-  const auroreaNetworkName = envConfig.drawerNetworkName
+  const auroreaNetworkName = envConfig.auroreaNetworkName
   const apiContainers = envConfig.apiContainers
 
   for (const container of apiContainers) {
