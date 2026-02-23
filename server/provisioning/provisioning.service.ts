@@ -512,6 +512,11 @@ export async function provisionProject(
     })
     console.log(`[Provisioning] Step 5: OK`)
 
+    // Step 6: Notify api-content to restore delayed publication schedulers
+    console.log(`[Provisioning] Step 6: Notifying api-content scheduler restore...`)
+    await notifySchedulerRestore(projectId)
+    console.log(`[Provisioning] Step 6: OK`)
+
     console.log(`[Provisioning] ========== SUCCESS for ${projectId} ==========`)
     console.log(`[Provisioning]   - MySQL: localhost:${mysqlPort}`)
     console.log(`[Provisioning]   - Redis: localhost:${redisPort}`)
@@ -602,6 +607,10 @@ export async function restartProjectContainers(projectId: string): Promise<{ suc
     console.log(`[RestartContainers] Reconnecting APIs to ${projectId} network...`)
     await connectApisToProjectNetwork(projectId)
     console.log(`[RestartContainers] APIs reconnected to ${projectId}-net`)
+
+    // Notify api-content to restore delayed publication schedulers
+    console.log(`[RestartContainers] Notifying api-content scheduler restore...`)
+    await notifySchedulerRestore(projectId)
 
     return { success: true }
   } catch (error: any) {
