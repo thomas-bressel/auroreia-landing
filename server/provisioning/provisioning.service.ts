@@ -365,8 +365,39 @@ async function disconnectApisFromProjectNetwork(projectId: string): Promise<void
  *
  * @param projectId - Project identifier
  */
+async function notifySchedulerStop(projectId: string): Promise<void> {
+  const apiContentUrl = process.env.API_CONTENT_INTERNAL_URL || 'http://drawer-nodejs-content-api-1:5001'
+  const internalKey = process.env.INTERNAL_API_KEY
+
+  if (!internalKey) {
+    console.warn(`[Provisioning] INTERNAL_API_KEY not set — skipping scheduler stop notification for ${projectId}`)
+    return
+  }
+
+  try {
+    const response = await fetch(`${apiContentUrl}/internal/scheduler/stop`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Key': internalKey
+      },
+      body: JSON.stringify({ projectId }),
+      signal: AbortSignal.timeout(3000)
+    })
+
+    if (response.ok) {
+      console.log(`[Provisioning] Scheduler stop for ${projectId}: OK`)
+    } else {
+      console.warn(`[Provisioning] Scheduler stop notification failed for ${projectId}: ${response.status}`)
+    }
+  } catch (error: any) {
+    console.warn(`[Provisioning] Could not notify api-content stop for ${projectId}:`, error.message)
+  }
+}
+
+
 async function notifySchedulerRestore(projectId: string): Promise<void> {
-  const apiContentUrl = process.env.API_CONTENT_INTERNAL_URL || 'http://drawer-nodejs-content-api-1:3000'
+  const apiContentUrl = process.env.API_CONTENT_INTERNAL_URL || 'http://drawer-nodejs-content-api-1:5001'
   const internalKey = process.env.INTERNAL_API_KEY
 
   if (!internalKey) {
@@ -381,7 +412,8 @@ async function notifySchedulerRestore(projectId: string): Promise<void> {
         'Content-Type': 'application/json',
         'X-Internal-Key': internalKey
       },
-      body: JSON.stringify({ projectId })
+      body: JSON.stringify({ projectId }),
+      signal: AbortSignal.timeout(3000)
     })
 
     if (response.ok) {
@@ -544,6 +576,11 @@ export async function stopProjectContainers(projectId: string): Promise<{ succes
   try {
     const projectPath = join(PROJECTS_BASE_PATH, projectId)
 
+    // Notify api-content FIRST while Redis is still up, so the scheduler
+    // stops cleanly before the containers go down
+    console.log(`[StopContainers] Notifying api-content scheduler stop...`)
+    await notifySchedulerStop(projectId)
+
     console.log(`[StopContainers] Stopping containers for ${projectId}...`)
 
     await execAsync(
@@ -553,7 +590,7 @@ export async function stopProjectContainers(projectId: string): Promise<{ succes
 
     console.log(`[StopContainers] Containers stopped for ${projectId}`)
 
-    // Disconnect APIs from project network when stopping
+    // Disconnect APIs from project network after containers are stopped
     console.log(`[StopContainers] Disconnecting APIs from ${projectId} network...`)
     await disconnectApisFromProjectNetwork(projectId)
     console.log(`[StopContainers] APIs disconnected from ${projectId}-net`)

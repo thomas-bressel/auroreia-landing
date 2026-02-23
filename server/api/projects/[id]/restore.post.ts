@@ -64,21 +64,22 @@ export default defineEventHandler(async (event) => {
   // Determine the status to restore to (fallback to 'pending' if not set)
   const restoreStatus = project.previous_status || 'pending'
 
+  // Restore status and clear previous_status field first,
+  // so that api-content can fetch credentials when notified below
+  await pool.execute(
+    `UPDATE projects SET status = ?, previous_status = NULL, updated_at = NOW() WHERE id = ?`,
+    [restoreStatus, projectId]
+  )
+
   // If project was previously active, restart Docker containers
   if (restoreStatus === 'active') {
     console.log(`[Restore] Restarting containers for ${projectId}...`)
     const result = await restartProjectContainers(projectId)
     if (!result.success) {
       console.warn(`[Restore] Error restarting containers: ${result.error}`)
-      // Continue with status restore - user can manually retry container start
+      // Continue - user can manually retry container start
     }
   }
-
-  // Restore status and clear previous_status field
-  await pool.execute(
-    `UPDATE projects SET status = ?, previous_status = NULL, updated_at = NOW() WHERE id = ?`,
-    [restoreStatus, projectId]
-  )
 
   return {
     success: true,
