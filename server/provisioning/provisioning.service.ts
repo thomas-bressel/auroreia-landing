@@ -358,6 +358,45 @@ async function disconnectApisFromProjectNetwork(projectId: string): Promise<void
 
 
 /**
+ * Notifies api-content that a project has become active so it can restore
+ * any delayed publication schedulers for that project.
+ *
+ * Fire-and-forget: errors are logged but never throw to avoid blocking provisioning.
+ *
+ * @param projectId - Project identifier
+ */
+async function notifySchedulerRestore(projectId: string): Promise<void> {
+  const apiContentUrl = process.env.API_CONTENT_INTERNAL_URL || 'http://drawer-nodejs-content-api-1:3000'
+  const internalKey = process.env.INTERNAL_API_KEY
+
+  if (!internalKey) {
+    console.warn(`[Provisioning] INTERNAL_API_KEY not set — skipping scheduler restore notification for ${projectId}`)
+    return
+  }
+
+  try {
+    const response = await fetch(`${apiContentUrl}/internal/scheduler/restore`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Internal-Key': internalKey
+      },
+      body: JSON.stringify({ projectId })
+    })
+
+    if (response.ok) {
+      const data = await response.json() as { started: boolean; reason?: string }
+      console.log(`[Provisioning] Scheduler restore for ${projectId}: started=${data.started}${data.reason ? ` (${data.reason})` : ''}`)
+    } else {
+      console.warn(`[Provisioning] Scheduler restore notification failed for ${projectId}: ${response.status}`)
+    }
+  } catch (error: any) {
+    console.warn(`[Provisioning] Could not notify api-content for ${projectId}:`, error.message)
+  }
+}
+
+
+/**
  * Updates project status in the platform database.
  * Optionally sets MySQL and Redis host addresses and credentials.
  *
