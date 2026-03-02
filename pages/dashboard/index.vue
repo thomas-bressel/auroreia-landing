@@ -53,34 +53,10 @@
               </p>
             </div>
             <div class="project-actions">
-              <a
-                v-if="project.status === 'active'"
-                :href="drawerUrl + '?project=' + project.id"
-                target="_blank"
-                class="action-btn primary"
-              >
-                Ouvrir dans Drawer
-              </a>
-              <button
-                v-if="project.status === 'pending' && provisioningProjectId !== project.id"
-                @click="handleProvision(project.id)"
-                class="action-btn primary"
-              >
-                Lancer le provisioning
-              </button>
-              <button
-                v-if="project.status === 'provisioning' || provisioningProjectId === project.id"
-                class="action-btn secondary"
-                disabled
-              >
-                Provisioning en cours...
-              </button>
-              <button
-                @click="confirmDelete(project)"
-                class="action-btn danger"
-              >
-                Supprimer
-              </button>
+              <a v-if="project.status === 'active'" :href="drawerUrl + '/' + project.id" target="_blank" class="action-btn primary">Ouvrir dans Drawer</a>
+              <button v-if="project.status === 'pending' && provisioningProjectId !== project.id" @click="handleProvision(project.id)" class="action-btn primary">Lancer le provisioning</button>
+              <button v-if="project.status === 'provisioning' || provisioningProjectId === project.id" class="action-btn secondary" disabled>Provisioning en cours...</button>
+              <button @click="confirmDelete(project)" class="action-btn danger">Supprimer</button>
             </div>
           </div>
         </div>

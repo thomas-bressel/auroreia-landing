@@ -137,7 +137,7 @@ CREATE TABLE `folders` (
   `icon` varchar(50) DEFAULT NULL,
   `is_display` tinyint(1) NOT NULL DEFAULT '0',
   `level_required` int NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id_folder`)
+  PRIMARY KEY (`id_folder`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `folders_files` (
@@ -215,14 +215,23 @@ CREATE TABLE `type` (
   UNIQUE KEY `type_name` (`type_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+-- Vue statistiques
+CREATE OR REPLACE VIEW `v_statistics` AS
+  SELECT
+    (SELECT COUNT(0) FROM `articles` WHERE `articles`.`is_deleted` = 0) AS `total_articles`,
+    (SELECT COUNT(0) FROM `contents`) AS `total_contents`,
+    (SELECT COUNT(0) FROM `column_images`) AS `total_images`,
+    (SELECT COUNT(0) FROM `tags` WHERE `tags`.`is_display` = 1) AS `total_tags`,
+    (SELECT COUNT(0) FROM `surveys` WHERE `surveys`.`is_display` = 1) AS `total_surveys`;
+
 -- Contraintes
 ALTER TABLE `articles`
   ADD CONSTRAINT `articles_ibfk_1` FOREIGN KEY (`id_author`) REFERENCES `author` (`id_author`),
   ADD CONSTRAINT `articles_ibfk_2` FOREIGN KEY (`id_categories`) REFERENCES `categories` (`id_categories`);
 
 ALTER TABLE `articles_files`
-  ADD CONSTRAINT `fk_articles_files_article` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_articles_files_file` FOREIGN KEY (`id_files`) REFERENCES `files` (`id_files`) ON DELETE CASCADE;
+  ADD CONSTRAINT `fk_articles_files_article` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_articles_files_file` FOREIGN KEY (`id_files`) REFERENCES `files` (`id_files`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 ALTER TABLE `article_tags`
   ADD CONSTRAINT `article_tags_ibfk_1` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`),
@@ -268,17 +277,24 @@ ALTER TABLE `surveys`
 -- DONNÉES INITIALES
 -- ==========================================
 
--- Catégorie par défaut
-INSERT INTO `categories` (`id_categories`, `name`) VALUES (1, 'Non classé');
+-- Catégories par défaut
+INSERT INTO `categories` (`id_categories`, `name`) VALUES
+(1, 'catégorie 1'),
+(2, 'catégorie 2'),
+(3, 'catégorie 3'),
+(4, 'catégorie 4');
 
--- Label par défaut pour les fichiers
-INSERT INTO `labels` (`id_label`, `name`) VALUES (1, 'Document');
+-- Types de surveys par défaut
+INSERT INTO `type` (`id_type`, `type_name`) VALUES
+(1, 'type 1'),
+(2, 'type 2');
 
--- Types de surveys
-INSERT INTO `type` (`id_type`, `type_name`) VALUES (1, 'Quiz'), (2, 'Sondage');
-
--- Auteur initial (lié à l'admin)
+-- Auteur initial (lié à l'admin créé lors du provisioning)
 INSERT INTO `author` (`id_author`, `user_uuid`, `author_nickname`) VALUES
 (1, '{{ADMIN_UUID}}', '{{ADMIN_USERNAME}}');
+
+-- Article de bienvenue
+INSERT INTO `articles` (`id_articles`, `title`, `description`, `creation_date`, `update_date`, `cover`, `is_display`, `id_author`, `id_categories`, `is_deleted`, `slug`) VALUES
+(1, 'Bienvenue dans DRAWER CIS', 'Drawer CIS permet de gérer le contenu de ta base de données. Ceci est un article d\'exemple que tu pourras supprimer. Il contient des informations, une sorte de tutoriel qui va te permettre de démarrer facilement !', '2026-01-01 00:00:00', '2026-01-01 00:00:00', NULL, 1, 1, 1, 0, 'bienvenue-dans-drawer-cis');
 
 COMMIT;

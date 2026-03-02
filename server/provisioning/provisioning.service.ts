@@ -16,7 +16,8 @@
  * └── mysql-init/
  *     ├── 01-create-databases.sql
  *     ├── 02-init-users-db.sql
- *     └── 03-init-content-db.sql
+ *     ├── 03-init-content-db.sql
+ *     └── 04-init-analytics-db.sql
  */
 import { randomUUID, randomBytes } from 'crypto'
 import { readFile, writeFile, mkdir } from 'fs/promises'
@@ -47,12 +48,12 @@ const ENV_CONFIG: { development: ProvisioningEnvConfig; staging: ProvisioningEnv
   },
   staging: {
     projectsBasePath: '/var/www/applications/auroreia/projects',
-    apiContainers: ['drawer-api-user-staging', 'drawer-api-content-staging', 'drawer-api-user-prod', 'drawer-api-content-prod'],
+    apiContainers: ['drawer-api-user-staging', 'drawer-api-content-staging', 'drawer-api-analytics-staging', 'drawer-api-user-prod', 'drawer-api-content-prod', 'drawer-api-analytics-prod'],
     auroreaNetworkName: 'auroreia-net-staging',
   },
   production: {
     projectsBasePath: '/var/www/applications/auroreia/projects',
-    apiContainers: ['drawer-api-user-prod', 'drawer-api-content-prod', 'drawer-api-user-staging', 'drawer-api-content-staging'],
+    apiContainers: ['drawer-api-user-prod', 'drawer-api-content-prod', 'drawer-api-analytics-prod', 'drawer-api-user-staging', 'drawer-api-content-staging', 'drawer-api-analytics-staging'],
     auroreaNetworkName: 'auroreia-net-prod',
   },
 }
@@ -218,7 +219,8 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
     { src: 'project.json.template', dest: '.project.json' },
     { src: '01-create-databases.sql.template', dest: 'mysql-init/01-create-databases.sql' },
     { src: '02-init-users-db.sql.template', dest: 'mysql-init/02-init-users-db.sql' },
-    { src: '03-init-content-db.sql.template', dest: 'mysql-init/03-init-content-db.sql' }
+    { src: '03-init-content-db.sql.template', dest: 'mysql-init/03-init-content-db.sql' },
+    { src: '04-init-analytics-db.sql.template', dest: 'mysql-init/04-init-analytics-db.sql' }
   ]
 
   for (const template of templates) {

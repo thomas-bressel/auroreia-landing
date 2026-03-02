@@ -1,0 +1,210 @@
+-- ==========================================
+-- Initialisation de la structure de la base ANALYTICS
+-- Project: {{PROJECT_ID}} ({{PROJECT_NAME}})
+-- ==========================================
+
+USE `{{PROJECT_ID}}_analytics`;
+
+SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
+START TRANSACTION;
+SET time_zone = "+00:00";
+
+CREATE TABLE `ga4_pages` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `path` varchar(500) NOT NULL,
+  `title` varchar(500) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_page` (`path`(255))
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ga4_countries` (
+  `id` smallint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `country_code` char(2) NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_country` (`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ga4_regions` (
+  `id` smallint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(150) NOT NULL,
+  `country_id` smallint UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_region` (`name`,`country_id`),
+  KEY `idx_country` (`country_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ga4_cities` (
+  `id` mediumint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) NOT NULL,
+  `region_id` smallint UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_city` (`name`,`region_id`),
+  KEY `idx_region` (`region_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ga4_sources` (
+  `id` smallint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `source` varchar(150) NOT NULL,
+  `medium` varchar(50) NOT NULL,
+  `channel_group` varchar(100) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_source` (`source`,`medium`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ga4_behavior` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `page_id` int UNSIGNED NOT NULL,
+  `new_vs_returning` varchar(50) NOT NULL DEFAULT '(not set)',
+  `page_views` int UNSIGNED NOT NULL,
+  `engagement_rate` float NOT NULL DEFAULT '0',
+  `avg_session_duration` decimal(10,2) UNSIGNED NOT NULL,
+  `entrances` int NOT NULL DEFAULT '0',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_behavior` (`date`,`page_id`,`new_vs_returning`),
+  KEY `idx_date` (`date`),
+  KEY `fk_behavior_page` (`page_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ga4_geo` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `city_id` mediumint UNSIGNED NOT NULL,
+  `device` enum('desktop','mobile','tablet') NOT NULL,
+  `sessions` mediumint UNSIGNED NOT NULL,
+  `active_users` mediumint UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_geo` (`date`,`city_id`,`device`),
+  KEY `idx_date` (`date`),
+  KEY `fk_geo_city` (`city_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ga4_traffic` (
+  `id` int UNSIGNED NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `source_id` smallint UNSIGNED NOT NULL,
+  `sessions` mediumint UNSIGNED NOT NULL,
+  `active_users` mediumint UNSIGNED NOT NULL,
+  `new_users` mediumint UNSIGNED NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_traffic` (`date`,`source_id`),
+  KEY `idx_date` (`date`),
+  KEY `fk_traffic_source` (`source_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE `ga4_sync` (
+  `id` tinyint UNSIGNED NOT NULL AUTO_INCREMENT,
+  `type` enum('geo','traffic','behavior') NOT NULL,
+  `last_sync` datetime NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_type` (`type`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- Contraintes de clés étrangères
+ALTER TABLE `ga4_regions`
+  ADD CONSTRAINT `fk_region_country` FOREIGN KEY (`country_id`) REFERENCES `ga4_countries` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `ga4_cities`
+  ADD CONSTRAINT `fk_city_region` FOREIGN KEY (`region_id`) REFERENCES `ga4_regions` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `ga4_behavior`
+  ADD CONSTRAINT `fk_behavior_page` FOREIGN KEY (`page_id`) REFERENCES `ga4_pages` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `ga4_geo`
+  ADD CONSTRAINT `fk_geo_city` FOREIGN KEY (`city_id`) REFERENCES `ga4_cities` (`id`) ON DELETE CASCADE;
+
+ALTER TABLE `ga4_traffic`
+  ADD CONSTRAINT `fk_traffic_source` FOREIGN KEY (`source_id`) REFERENCES `ga4_sources` (`id`) ON DELETE CASCADE;
+
+-- Vues
+CREATE OR REPLACE VIEW `v_ga4_behavior` AS
+  SELECT
+    b.`date`,
+    p.`path`,
+    p.`title`,
+    b.`new_vs_returning`,
+    b.`page_views`,
+    b.`engagement_rate`,
+    b.`avg_session_duration`
+  FROM `ga4_behavior` b
+  JOIN `ga4_pages` p ON p.`id` = b.`page_id`;
+
+CREATE OR REPLACE VIEW `v_ga4_geo` AS
+  SELECT
+    g.`date`,
+    ci.`name` AS `city`,
+    r.`name` AS `region`,
+    co.`name` AS `country`,
+    co.`country_code`,
+    g.`device`,
+    g.`sessions`,
+    g.`active_users`
+  FROM `ga4_geo` g
+  JOIN `ga4_cities` ci ON ci.`id` = g.`city_id`
+  JOIN `ga4_regions` r ON r.`id` = ci.`region_id`
+  JOIN `ga4_countries` co ON co.`id` = r.`country_id`;
+
+CREATE OR REPLACE VIEW `v_ga4_traffic` AS
+  SELECT
+    t.`date`,
+    s.`source`,
+    s.`medium`,
+    s.`channel_group`,
+    t.`sessions`,
+    t.`active_users`,
+    t.`new_users`
+  FROM `ga4_traffic` t
+  JOIN `ga4_sources` s ON s.`id` = t.`source_id`;
+
+CREATE OR REPLACE VIEW `v_stats_by_city` AS
+  SELECT
+    ci.`name` AS `city`,
+    r.`name` AS `region`,
+    co.`name` AS `country`,
+    co.`country_code`,
+    SUM(g.`sessions`) AS `total_sessions`,
+    SUM(g.`active_users`) AS `total_users`
+  FROM `ga4_geo` g
+  JOIN `ga4_cities` ci ON ci.`id` = g.`city_id`
+  JOIN `ga4_regions` r ON r.`id` = ci.`region_id`
+  JOIN `ga4_countries` co ON co.`id` = r.`country_id`
+  GROUP BY ci.`id`, ci.`name`, r.`name`, co.`name`, co.`country_code`
+  ORDER BY `total_sessions` DESC;
+
+CREATE OR REPLACE VIEW `v_stats_by_country` AS
+  SELECT
+    co.`name` AS `country`,
+    co.`country_code`,
+    SUM(g.`sessions`) AS `total_sessions`,
+    SUM(g.`active_users`) AS `total_users`
+  FROM `ga4_geo` g
+  JOIN `ga4_cities` ci ON ci.`id` = g.`city_id`
+  JOIN `ga4_regions` r ON r.`id` = ci.`region_id`
+  JOIN `ga4_countries` co ON co.`id` = r.`country_id`
+  GROUP BY co.`id`, co.`name`, co.`country_code`;
+
+CREATE OR REPLACE VIEW `v_stats_by_page` AS
+  SELECT
+    p.`path`,
+    p.`title`,
+    SUM(b.`page_views`) AS `total_page_views`,
+    AVG(b.`engagement_rate`) AS `avg_engagement_rate`,
+    AVG(b.`avg_session_duration`) AS `avg_session_duration`
+  FROM `ga4_behavior` b
+  JOIN `ga4_pages` p ON p.`id` = b.`page_id`
+  GROUP BY p.`id`, p.`path`, p.`title`;
+
+CREATE OR REPLACE VIEW `v_stats_by_source` AS
+  SELECT
+    s.`source`,
+    s.`medium`,
+    s.`channel_group`,
+    SUM(t.`sessions`) AS `total_sessions`,
+    SUM(t.`active_users`) AS `total_active_users`,
+    SUM(t.`new_users`) AS `total_new_users`
+  FROM `ga4_traffic` t
+  JOIN `ga4_sources` s ON s.`id` = t.`source_id`
+  GROUP BY s.`id`, s.`source`, s.`medium`, s.`channel_group`;
+
+COMMIT;
