@@ -20,7 +20,7 @@
  *     └── 04-init-analytics-db.sql
  */
 import { randomUUID, randomBytes } from 'crypto'
-import { readFile, writeFile, mkdir } from 'fs/promises'
+import { readFile, writeFile, mkdir, copyFile } from 'fs/promises'
 import { join } from 'path'
 import { exec } from 'child_process'
 import { promisify } from 'util'
@@ -189,6 +189,20 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
   await mkdir(join(projectPath, 'uploads', 'content', 'documents'), { recursive: true })
   await mkdir(join(projectPath, 'uploads', 'content', 'folders'), { recursive: true })
   await mkdir(join(projectPath, 'uploads', 'users', 'avatars'), { recursive: true })
+
+  // Copy default assets
+  await copyFile(
+    join(TEMPLATES_PATH, 'default-avatar.webp'),
+    join(projectPath, 'uploads', 'users', 'avatars', 'default-avatar.webp')
+  )
+  await copyFile(
+    join(TEMPLATES_PATH, 'default-icon.svg'),
+    join(projectPath, 'uploads', 'content', 'folders', 'default-icon.svg')
+  )
+  await copyFile(
+    join(TEMPLATES_PATH, 'default-image.webp'),
+    join(projectPath, 'uploads', 'content', 'articles', 'default-image.webp')
+  )
 
   // Prepare template replacements
   const adminUuid = randomUUID()
