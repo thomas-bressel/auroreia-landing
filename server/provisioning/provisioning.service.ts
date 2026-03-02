@@ -42,7 +42,7 @@ interface ProvisioningEnvConfig {
 const ENV_CONFIG: { development: ProvisioningEnvConfig; staging: ProvisioningEnvConfig; production: ProvisioningEnvConfig } = {
   development: {
     projectsBasePath: '/var/www/html/active/auroreia/projects',
-    apiContainers: ['drawer-nodejs-user-api-1', 'drawer-nodejs-content-api-1'],
+    apiContainers: ['drawer-nodejs-user-api-1', 'drawer-nodejs-content-api-1', 'drawer-nodejs-analytics-api-1'],
     auroreaNetworkName: 'auroreia_auroreia-net',
   },
   staging: {

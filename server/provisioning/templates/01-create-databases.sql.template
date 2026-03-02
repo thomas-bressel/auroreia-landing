@@ -6,6 +6,7 @@
 
 CREATE DATABASE IF NOT EXISTS `{{PROJECT_ID}}_content` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS `{{PROJECT_ID}}_users` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS `{{PROJECT_ID}}_analytics` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- Créer l'utilisateur dédié au projet
 CREATE USER IF NOT EXISTS '{{MYSQL_USER}}'@'%' IDENTIFIED BY '{{MYSQL_PASSWORD}}';
@@ -13,5 +14,6 @@ CREATE USER IF NOT EXISTS '{{MYSQL_USER}}'@'%' IDENTIFIED BY '{{MYSQL_PASSWORD}}
 -- Donner tous les privilèges sur les bases du projet
 GRANT ALL PRIVILEGES ON `{{PROJECT_ID}}_users`.* TO '{{MYSQL_USER}}'@'%';
 GRANT ALL PRIVILEGES ON `{{PROJECT_ID}}_content`.* TO '{{MYSQL_USER}}'@'%';
+GRANT ALL PRIVILEGES ON `{{PROJECT_ID}}_analytics`.* TO '{{MYSQL_USER}}'@'%';
 
 FLUSH PRIVILEGES;
