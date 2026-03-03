@@ -171,6 +171,9 @@ export default defineNuxtConfig({
   },
 
   vite: {
+    server: {
+      allowedHosts: ['auroreia-landing', 'localhost']
+    },
     build: {
       cssMinify: true,
       minify: 'esbuild',

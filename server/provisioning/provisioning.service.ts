@@ -185,10 +185,10 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
   // Create project directories
   await mkdir(projectPath, { recursive: true })
   await mkdir(mysqlInitPath, { recursive: true })
-  await mkdir(join(projectPath, 'uploads', 'content', 'articles'), { recursive: true })
-  await mkdir(join(projectPath, 'uploads', 'content', 'documents'), { recursive: true })
-  await mkdir(join(projectPath, 'uploads', 'content', 'folders'), { recursive: true })
-  await mkdir(join(projectPath, 'uploads', 'users', 'avatars'), { recursive: true })
+  await mkdir(join(projectPath, 'uploads', 'content', 'articles', '1'), { recursive: true, mode: 0o777 })
+  await mkdir(join(projectPath, 'uploads', 'content', 'documents'), { recursive: true, mode: 0o777 })
+  await mkdir(join(projectPath, 'uploads', 'content', 'folders'), { recursive: true, mode: 0o777 })
+  await mkdir(join(projectPath, 'uploads', 'users', 'avatars'), { recursive: true, mode: 0o777 })
 
   // Copy default assets
   await copyFile(
@@ -202,6 +202,10 @@ async function createProjectFiles(config: ProvisioningConfig): Promise<{
   await copyFile(
     join(TEMPLATES_PATH, 'default-image.webp'),
     join(projectPath, 'uploads', 'content', 'articles', 'default-image.webp')
+  )
+  await copyFile(
+    join(TEMPLATES_PATH, 'default-image.webp'),
+    join(projectPath, 'uploads', 'content', 'articles', '1', 'default-image.webp')
   )
 
   // Prepare template replacements

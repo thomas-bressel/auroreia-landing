@@ -276,6 +276,12 @@ ALTER TABLE `surveys`
   ADD CONSTRAINT `surveys_ibfk_1` FOREIGN KEY (`id_type`) REFERENCES `type` (`id_type`),
   ADD CONSTRAINT `surveys_ibfk_2` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`);
 
+
+-- ==========================================
+-- POUR LE MOMENT ID TEMPLATE POSE UN PROBLEME
+-- ==========================================
+ALTER TABLE `contents` DROP FOREIGN KEY `contents_ibfk_5`;
+
 -- ==========================================
 -- DONNÉES INITIALES
 -- ==========================================
