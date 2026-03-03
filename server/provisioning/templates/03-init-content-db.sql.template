@@ -127,9 +127,11 @@ CREATE TABLE `files` (
   `is_display` tinyint(1) NOT NULL DEFAULT '0',
   `level_required` int NOT NULL DEFAULT '1',
   `id_label` int NOT NULL,
+  `id_folder` int DEFAULT NULL,
   `description` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id_files`),
-  KEY `id_label` (`id_label`)
+  KEY `id_label` (`id_label`),
+  KEY `id_folder` (`id_folder`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `folders` (
@@ -141,13 +143,6 @@ CREATE TABLE `folders` (
   `is_display` tinyint(1) NOT NULL DEFAULT '0',
   `level_required` int NOT NULL DEFAULT '1',
   PRIMARY KEY (`id_folder`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
-
-CREATE TABLE `folders_files` (
-  `id_folder` int NOT NULL,
-  `id_files` int NOT NULL,
-  PRIMARY KEY (`id_folder`,`id_files`),
-  KEY `id_files` (`id_files`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE `labels` (
@@ -256,18 +251,14 @@ ALTER TABLE `column_titles`
   ADD CONSTRAINT `column_titles_ibfk_1` FOREIGN KEY (`id_column`) REFERENCES `content_columns` (`id_column`) ON DELETE CASCADE;
 
 ALTER TABLE `contents`
-  ADD CONSTRAINT `contents_ibfk_4` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`),
-  ADD CONSTRAINT `contents_ibfk_5` FOREIGN KEY (`id_templates`) REFERENCES `templates` (`id_templates`);
+  ADD CONSTRAINT `contents_ibfk_4` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`);
 
 ALTER TABLE `content_columns`
   ADD CONSTRAINT `content_columns_ibfk_1` FOREIGN KEY (`id_contents`) REFERENCES `contents` (`id_contents`) ON DELETE CASCADE;
 
 ALTER TABLE `files`
-  ADD CONSTRAINT `files_ibfk_1` FOREIGN KEY (`id_label`) REFERENCES `labels` (`id_label`);
-
-ALTER TABLE `folders_files`
-  ADD CONSTRAINT `folders_files_ibfk_1` FOREIGN KEY (`id_folder`) REFERENCES `folders` (`id_folder`),
-  ADD CONSTRAINT `folders_files_ibfk_2` FOREIGN KEY (`id_files`) REFERENCES `files` (`id_files`);
+  ADD CONSTRAINT `files_ibfk_1` FOREIGN KEY (`id_label`) REFERENCES `labels` (`id_label`),
+  ADD CONSTRAINT `files_ibfk_2` FOREIGN KEY (`id_folder`) REFERENCES `folders` (`id_folder`) ON DELETE CASCADE;
 
 ALTER TABLE `questions`
   ADD CONSTRAINT `questions_ibfk_1` FOREIGN KEY (`id_surveys`) REFERENCES `surveys` (`id_surveys`);
@@ -277,10 +268,6 @@ ALTER TABLE `surveys`
   ADD CONSTRAINT `surveys_ibfk_2` FOREIGN KEY (`id_articles`) REFERENCES `articles` (`id_articles`);
 
 
--- ==========================================
--- POUR LE MOMENT ID TEMPLATE POSE UN PROBLEME
--- ==========================================
-ALTER TABLE `contents` DROP FOREIGN KEY `contents_ibfk_5`;
 
 -- ==========================================
 -- DONNÉES INITIALES

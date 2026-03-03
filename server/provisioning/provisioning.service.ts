@@ -638,7 +638,7 @@ export async function restartProjectContainers(projectId: string): Promise<{ suc
     console.log(`[RestartContainers] Restarting containers for ${projectId}...`)
 
     await execAsync(
-      `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f ${COMPOSE_FILENAME} start`,
+      `cd ${projectPath} && set -a && . ./.env && set +a && docker compose -p ${projectId} -f ${COMPOSE_FILENAME} up -d`,
       { timeout: 120000, shell: '/bin/sh' }
     )
 
