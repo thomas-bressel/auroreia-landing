@@ -21,7 +21,11 @@ console.log('✅ isProduction:', isProduction)
 console.log('✅ baseURL:', baseURL)
 
 // URL Drawer selon l'environnement
-const drawerUrl = isStaging ? 'https://staging.drawer.auroreia.fr' : 'https://drawer.auroreia.fr'
+const drawerUrl = isStaging
+  ? 'https://staging.drawer.auroreia.fr'
+  : isProduction
+    ? 'https://drawer.auroreia.fr'
+    : 'http://localhost:4200'
 
 export default defineNuxtConfig({
   devtools: { enabled: true },
