@@ -30,7 +30,7 @@ services:
     container_name: {{PROJECT_ID}}-redis
     ports:
      - "127.0.0.1:${REDIS_PORT:-6379}:6379"
-    command: redis-server --requirepass ${REDIS_PASSWORD:-redispassword}
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-redispassword}"]
     networks:
       - {{PROJECT_ID}}-net
     restart: unless-stopped
